@@ -14,6 +14,7 @@ Modern React frontend for MentraFlow - an AI-powered learning platform with flas
 ## Tech Stack
 
 - **React 19** - UI framework
+- **Vite 6** - Build tool and dev server (fast, modern)
 - **React Router v7** - Routing
 - **Tailwind CSS** - Styling
 - **Radix UI** - Accessible components
@@ -23,7 +24,7 @@ Modern React frontend for MentraFlow - an AI-powered learning platform with flas
 
 ## Prerequisites
 
-- Node.js 18+ and npm/yarn
+- Node.js 20+ (LTS recommended) and npm/yarn
 - Backend API running (see [mentraflow-backend](https://github.com/shree6791/mentraflow-backend))
 
 ## Setup
@@ -42,17 +43,17 @@ Modern React frontend for MentraFlow - an AI-powered learning platform with flas
 
    Edit `.env` and set:
    ```env
-   REACT_APP_BACKEND_URL=http://localhost:8000
-   REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id-here
+   VITE_BACKEND_URL=http://localhost:8000
+   VITE_GOOGLE_CLIENT_ID=your-google-client-id-here
    ```
    
    For Google OAuth setup, see [docs/GOOGLE_OAUTH_SETUP.md](docs/GOOGLE_OAUTH_SETUP.md)
 
 3. **Start development server:**
    ```bash
-   npm start
+   npm run dev
    # or
-   yarn start
+   yarn dev
    ```
 
    The app will open at [http://localhost:3000](http://localhost:3000)
@@ -63,19 +64,19 @@ Modern React frontend for MentraFlow - an AI-powered learning platform with flas
 src/
 ├── components/        # Reusable UI components
 │   ├── ui/           # Base UI components (Button, Card, Input, etc.)
-│   └── AppLayout.js  # Main layout with sidebar
+│   └── AppLayout.jsx  # Main layout with sidebar
 ├── context/          # React contexts
-│   ├── AuthContext.js      # Authentication state
-│   └── WorkspaceContext.js # Workspace management
+│   ├── AuthContext.jsx      # Authentication state
+│   └── WorkspaceContext.jsx # Workspace management
 ├── pages/            # Page components
-│   ├── Home.js       # Landing page
-│   ├── Login.js      # Authentication
-│   ├── Dashboard.js  # Main dashboard
-│   ├── Documents.js  # Document management
-│   ├── Flashcards.js # Flashcard study interface
-│   ├── KnowledgeGraph.js # Knowledge graph visualization
-│   ├── Chat.js       # Study assistant chat
-│   └── Settings.js   # User settings
+│   ├── Home.jsx       # Landing page
+│   ├── Login.jsx      # Authentication
+│   ├── Dashboard.jsx  # Main dashboard
+│   ├── Documents.jsx  # Document management
+│   ├── Flashcards.jsx # Flashcard study interface
+│   ├── KnowledgeGraph.jsx # Knowledge graph visualization
+│   ├── Chat.jsx       # Study assistant chat
+│   └── Settings.jsx   # User settings
 ├── services/         # API integration
 │   └── api.js        # Centralized API service layer
 ├── constants/        # Constants and theme
@@ -127,14 +128,18 @@ The frontend integrates with the FastAPI backend at `/api/v1`. All API calls are
 
 ### Available Scripts
 
-- `npm start` - Start development server
-- `npm build` - Build for production
-- `npm test` - Run tests
+- `npm run dev` - Start Vite development server (fast HMR)
+- `npm run build` - Build for production (outputs to `dist/`)
+- `npm run preview` - Preview production build locally
 
 ### Environment Variables
 
-- `REACT_APP_BACKEND_URL` - Backend API URL (default: http://localhost:8000)
-- `REACT_APP_GOOGLE_CLIENT_ID` - Google OAuth client ID
+Vite uses `VITE_` prefix for environment variables:
+
+- `VITE_BACKEND_URL` - Backend API URL (default: http://localhost:8000)
+- `VITE_GOOGLE_CLIENT_ID` - Google OAuth client ID
+
+**Note:** Environment variables must be prefixed with `VITE_` to be exposed to the client. The code uses `process.env.REACT_APP_*` for backward compatibility, but your `.env` file should use `VITE_` prefix.
 
 ## Backend Integration
 
@@ -173,7 +178,9 @@ This frontend includes several improvements over the original:
 Scripts for deployment are located in the `scripts/` folder:
 
 - **`scripts/deploy.sh`** - Initial deployment on the server (builds and deploys)
-- **`scripts/update.sh`** - Update on server (pulls latest changes from git, rebuilds, and deploys) - **Recommended for regular updates**
+- **`scripts/update.sh`** - Update on server (rebuilds and deploys after copying code via SCP)
+
+**Note:** Code is deployed using SCP/rsync from your local machine. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for details.
 
 ## Documentation
 
@@ -181,8 +188,8 @@ Additional documentation is available in the `docs/` folder:
 
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete guide for deploying to DigitalOcean droplet
 - **[Google OAuth Setup](docs/GOOGLE_OAUTH_SETUP.md)** - Step-by-step Google OAuth configuration
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Chrome Troubleshooting](docs/CHROME_TROUBLESHOOTING.md)** - Chrome-specific issues
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common development issues and browser troubleshooting
+- **[Frontend Deployment Troubleshooting](docs/TROUBLESHOOTING_FRONTEND.md)** - Server deployment issues
 
 ## License
 

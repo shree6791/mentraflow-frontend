@@ -4,9 +4,10 @@
 
 ### Possible Causes:
 
-1. **Backend URL Missing Port**
-   - Your backend might be running on port 8000
-   - Update `.env` to: `REACT_APP_BACKEND_URL=http://147.182.239.22:8000`
+1. **Backend URL Configuration**
+   - For development: `VITE_BACKEND_URL=http://localhost:8000`
+   - For production: `VITE_BACKEND_URL=http://147.182.239.22`
+   - Update `.env` file accordingly
 
 2. **CORS Issues**
    - Check Network tab in DevTools
@@ -37,14 +38,16 @@ Your backend might need a port number. Common ports:
 
 Try updating `.env`:
 ```env
-REACT_APP_BACKEND_URL=http://147.182.239.22:8000
+VITE_BACKEND_URL=http://localhost:8000
 ```
 
 ### 3. Check Backend Health
 Test if backend is accessible:
 ```bash
-curl http://147.182.239.22:8000/health
-# or
+# Development (direct backend)
+curl http://localhost:8000/health
+
+# Production (through nginx)
 curl http://147.182.239.22/health
 ```
 
@@ -54,13 +57,13 @@ curl http://147.182.239.22/health
 - Focus on API-related errors
 
 ### 5. Verify Environment Variables
-In console, you should see:
-```
-Backend URL: http://147.182.239.22
-API Base: http://147.182.239.22/api/v1
+Check that your `.env` file uses `VITE_` prefix:
+```env
+VITE_BACKEND_URL=http://localhost:8000
+VITE_GOOGLE_CLIENT_ID=your-client-id
 ```
 
-If you see `localhost:8000`, the `.env` file isn't being loaded.
+Restart the dev server after changing `.env` files.
 
 ## Common Issues:
 
@@ -97,15 +100,16 @@ If you see `localhost:8000`, the `.env` file isn't being loaded.
 
 ## Quick Fixes:
 
-1. **Add Port to Backend URL:**
+1. **Check Environment Variables:**
    ```env
-   REACT_APP_BACKEND_URL=http://147.182.239.22:8000
+   VITE_BACKEND_URL=http://localhost:8000
+   VITE_GOOGLE_CLIENT_ID=your-client-id
    ```
 
 2. **Restart Dev Server:**
    ```bash
    # Stop server (Ctrl+C)
-   npm start
+   npm run dev
    ```
 
 3. **Clear Browser Cache:**
@@ -114,8 +118,50 @@ If you see `localhost:8000`, the `.env` file isn't being loaded.
 
 4. **Check Backend is Running:**
    ```bash
-   curl http://147.182.239.22:8000/health
+   curl http://localhost:8000/health
    ```
+
+## Browser Issues
+
+### Issue: App works in Cursor browser but not in Chrome
+
+**Common Causes:**
+1. **Browser Extensions Interfering** - Chrome extensions (like Emily extension) can block or modify page content
+2. **Cached Content** - Chrome aggressively caches JavaScript and CSS
+3. **Service Workers** - Service workers can cache old versions
+4. **Browser Security Settings** - Chrome's security settings might block certain features
+
+**Solutions (Try in Order):**
+
+1. **Hard Refresh (Most Common Fix)**
+   - **Windows/Linux:** `Ctrl + Shift + R` or `Ctrl + F5`
+   - **Mac:** `Cmd + Shift + R`
+   - This bypasses cache and reloads everything fresh
+
+2. **Clear Browser Cache**
+   - Open Chrome DevTools (F12)
+   - Right-click the refresh button → "Empty Cache and Hard Reload"
+   - Or go to Settings → Privacy → Clear browsing data → Cached images and files
+
+3. **Disable Extensions (Temporarily)**
+   - Go to `chrome://extensions/`
+   - Toggle off all extensions (especially Emily extension)
+   - Refresh the page
+   - If it works, enable extensions one by one to find the culprit
+
+4. **Use Incognito Mode**
+   - Open Chrome Incognito window (`Ctrl+Shift+N` or `Cmd+Shift+N`)
+   - Navigate to `http://localhost:3000`
+   - This disables extensions and uses fresh cache
+   - If it works in incognito, it's an extension or cache issue
+
+5. **Clear Service Workers**
+   - Open DevTools (F12) → **Application** tab
+   - Click **Service Workers** in left sidebar
+   - Click **Unregister** for any service workers
+   - Refresh the page
+
+**Most Likely Fix:** Try Incognito Mode First - This will quickly tell you if it's an extension or cache issue.
 
 ## Getting Help:
 

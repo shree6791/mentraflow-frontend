@@ -24,14 +24,15 @@ fi
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
-    echo -e "${RED}Node.js is not installed. Please install Node.js 18+ first.${NC}"
+    echo -e "${RED}Node.js is not installed. Please install Node.js 20+ (LTS) first.${NC}"
     exit 1
 fi
 
 # Check Node.js version
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -lt 18 ]; then
-    echo -e "${RED}Node.js version 18+ is required. Current version: $(node -v)${NC}"
+if [ "$NODE_VERSION" -lt 20 ]; then
+    echo -e "${RED}Node.js version 20+ (LTS) is required. Current version: $(node -v)${NC}"
+    echo -e "${YELLOW}Note: Node.js 18.x is deprecated. Please upgrade to Node.js 20.x LTS.${NC}"
     exit 1
 fi
 
@@ -58,22 +59,55 @@ if [ ! -f .env ]; then
 fi
 
 echo -e "${YELLOW}🔨 Building production bundle...${NC}"
-npm run build
+# Show current directory for debugging
+echo -e "${YELLOW}Current directory: $(pwd)${NC}"
 
-if [ ! -d "build" ]; then
-    echo -e "${RED}Error: Build directory not created. Build failed.${NC}"
+# Run build and capture exit code
+if ! npm run build; then
+    echo -e "${RED}Error: Build command failed.${NC}"
+    exit 1
+fi
+
+# Verify build directory exists (Vite uses 'dist' instead of 'build')
+if [ ! -d "dist" ]; then
+    echo -e "${RED}Error: Build directory (dist) not created. Build failed.${NC}"
+    echo -e "${YELLOW}Checking current directory contents:${NC}"
+    ls -la
+    exit 1
+fi
+
+# Verify build directory has content
+if [ ! -f "dist/index.html" ]; then
+    echo -e "${RED}Error: Build directory exists but index.html is missing. Build may have failed.${NC}"
     exit 1
 fi
 
 echo -e "${GREEN}✓ Build completed successfully${NC}"
+echo -e "${GREEN}✓ Build directory verified: $(pwd)/dist${NC}"
 
 # Create deployment directory if it doesn't exist
 mkdir -p "$DEPLOY_DIR"
 
 # Deploy new build
 echo -e "${YELLOW}🚀 Deploying new build...${NC}"
+echo -e "${YELLOW}Source: $(pwd)/dist${NC}"
+echo -e "${YELLOW}Destination: $DEPLOY_DIR/build${NC}"
+
+# Verify build directory still exists before copying
+if [ ! -d "dist" ]; then
+    echo -e "${RED}Error: Build directory (dist) disappeared! Current directory: $(pwd)${NC}"
+    ls -la
+    exit 1
+fi
+
 rm -rf "$DEPLOY_DIR/build"
-cp -r build "$DEPLOY_DIR/"
+cp -r dist "$DEPLOY_DIR/build"
+
+# Verify copy succeeded
+if [ ! -d "$DEPLOY_DIR/build" ]; then
+    echo -e "${RED}Error: Copy failed. Destination directory not created.${NC}"
+    exit 1
+fi
 
 # Set proper permissions
 if [ "$EUID" -eq 0 ]; then

@@ -1,6 +1,6 @@
 # Google OAuth Setup Guide
 
-This guide will walk you through setting up Google OAuth to get your `REACT_APP_GOOGLE_CLIENT_ID`.
+This guide will walk you through setting up Google OAuth to get your `VITE_GOOGLE_CLIENT_ID`.
 
 ## Step 1: Create a Google Cloud Project
 
@@ -61,22 +61,22 @@ Alternatively, you can use the newer **"Google Identity Services"** which is rec
 2. Add your Client ID:
 
 ```env
-REACT_APP_GOOGLE_CLIENT_ID=your-client-id-here.apps.googleusercontent.com
-REACT_APP_BACKEND_URL=http://localhost:8000
+VITE_GOOGLE_CLIENT_ID=your-client-id-here.apps.googleusercontent.com
+VITE_BACKEND_URL=http://localhost:8000
 ```
 
 3. Save the file
 4. **Restart your development server** for the changes to take effect
 
-## Step 7: Update App.js (If Needed)
+## Step 7: Update App.jsx (If Needed)
 
-Make sure your `App.js` wraps the app with `GoogleOAuthProvider`. Check if it's already there, if not, update it:
+Make sure your `App.jsx` wraps the app with `GoogleOAuthProvider`. Check if it's already there, if not, update it:
 
 ```javascript
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 function App() {
-  const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+  const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID; // Uses VITE_GOOGLE_CLIENT_ID from .env
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
@@ -88,7 +88,7 @@ function App() {
 
 ## Testing
 
-1. Start your development server: `npm start`
+1. Start your development server: `npm run dev`
 2. Go to the login page
 3. Click the Google sign-in button
 4. You should see the Google sign-in popup
@@ -105,7 +105,7 @@ function App() {
 - Make sure the OAuth consent screen is published (for production)
 
 ### "Invalid client ID"
-- Double-check that `REACT_APP_GOOGLE_CLIENT_ID` is set correctly in your `.env` file
+- Double-check that `VITE_GOOGLE_CLIENT_ID` is set correctly in your `.env` file
 - Make sure you restarted the development server after adding the env variable
 - Verify the Client ID in Google Cloud Console matches what's in your `.env`
 

@@ -6,266 +6,239 @@ This guide will help you deploy the MentraFlow frontend to your existing Digital
 
 - **Droplet IP**: `147.182.239.22`
 - **SSH User**: `mentraflow`
-- **Backend Directory**: `/home/mentraflow/mentraflow-backend`
 - **Frontend Directory**: `/home/mentraflow/mentraflow-frontend`
-
-## Quick Start
-
-**Standard workflow (recommended):**
-
-1. **Push your code to git:**
-   ```bash
-   git add .
-   git commit -m "Your commit message"
-   git push origin main  # or your branch name
-   ```
-
-2. **SSH to your droplet and update:**
-   ```bash
-   ssh mentraflow@147.182.239.22
-   cd /home/mentraflow/mentraflow-frontend
-   ./scripts/update.sh
-   ```
-
-   This will:
-   - Pull latest changes from git
-   - Update dependencies
-   - Build production bundle
-   - Deploy new build
-   - Reload nginx
 
 ## Prerequisites
 
 1. **DigitalOcean Droplet** with backend already running
 2. **SSH access** to the droplet as `mentraflow` user
-3. **Node.js 18+** installed on the droplet
+3. **Node.js 20+** installed on the droplet (LTS recommended)
 4. **Nginx** installed and configured
 5. **Google OAuth credentials** configured for production
 
-## Step 1: Initial Server Setup
+## Initial Server Setup
 
-### 1.1 Connect to Your Droplet
+### 1. Connect to Your Droplet
 
 ```bash
 ssh mentraflow@147.182.239.22
 ```
 
-### 1.2 Update System Packages
+### 2. Install Node.js 20+ (LTS)
 
 ```bash
+# Update system packages
 sudo apt update
 sudo apt upgrade -y
-```
 
-### 1.3 Install Node.js 18+
-
-```bash
-# Using NodeSource repository
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+# Install Node.js 20.x LTS
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # Verify installation
-node -v  # Should show v18.x.x or higher
-npm -v
+node -v  # Should show v20.x.x or higher
+npm -v   # Should show v10.x.x or higher
+
+# Update npm to latest version
+sudo npm install -g npm@latest
 ```
 
-### 1.4 Install Nginx
+### 3. Install Nginx
 
 ```bash
 sudo apt install -y nginx
-
-# Start and enable nginx
 sudo systemctl start nginx
 sudo systemctl enable nginx
-
-# Check status
 sudo systemctl status nginx
 ```
 
-### 1.5 Install Git (if not already installed)
+### 4. Configure Firewall
 
 ```bash
-sudo apt install -y git
+sudo ufw allow OpenSSH
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
+sudo ufw status
 ```
 
-## Step 2: Clone and Setup Project
+## Initial Deployment
 
-### 2.1 Clone Repository
+### Step 1: Copy Code to Server (SCP)
+
+**On your local machine:**
 
 ```bash
-# Navigate to home directory
+# Navigate to your project directory
+cd /path/to/mentraflow-frontend
+
+# Copy files using rsync (recommended - faster and supports exclusions)
+rsync -avz \
+  --exclude='node_modules' \
+  --exclude='dist' \
+  --exclude='.git' \
+  --exclude='.env' \
+  ./ mentraflow@147.182.239.22:/home/mentraflow/mentraflow-frontend/
+```
+
+**Alternative: Using tar + SCP (if rsync is not available):**
+
+```bash
+# Create a tarball excluding unnecessary files
+tar --exclude='node_modules' \
+    --exclude='dist' \
+    --exclude='.git' \
+    --exclude='.env' \
+    -czf mentraflow-frontend.tar.gz .
+
+# Copy to server
+scp mentraflow-frontend.tar.gz mentraflow@147.182.239.22:/tmp/
+
+# On server, extract it
+ssh mentraflow@147.182.239.22
 cd /home/mentraflow
-
-# Clone your repository (replace with your repo URL)
-git clone https://github.com/your-username/mentraflow-frontend.git
-# OR if using SSH:
-# git clone git@github.com:your-username/mentraflow-frontend.git
-
+mkdir -p mentraflow-frontend
 cd mentraflow-frontend
+tar -xzf /tmp/mentraflow-frontend.tar.gz
+rm /tmp/mentraflow-frontend.tar.gz
 ```
 
-### 2.2 Configure Environment Variables
+### Step 2: Configure Environment Variables
+
+**On the server:**
 
 ```bash
-# Copy example environment file
+cd /home/mentraflow/mentraflow-frontend
 cp env.production.example .env
-
-# Edit with your production values
 nano .env
 ```
 
 Update the `.env` file with:
 ```env
-REACT_APP_BACKEND_URL=http://147.182.239.22
-REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id-here.apps.googleusercontent.com
+VITE_BACKEND_URL=http://147.182.239.22
+VITE_GOOGLE_CLIENT_ID=your-google-client-id-here.apps.googleusercontent.com
 ```
 
 **Important**: Make sure your Google OAuth Client ID has your production IP added to:
 - **Authorized JavaScript origins**: `http://147.182.239.22`
 - **Authorized redirect URIs**: `http://147.182.239.22`
 
-## Step 3: Configure Nginx
-
-### 3.1 Copy Nginx Configuration
+### Step 3: Configure Nginx
 
 ```bash
 # Copy nginx config to nginx sites-available
 sudo cp nginx.conf /etc/nginx/sites-available/mentraflow-frontend
 
-# Create symbolic link to enable the site (if not already exists)
+# Create symbolic link to enable the site
 sudo ln -sf /etc/nginx/sites-available/mentraflow-frontend /etc/nginx/sites-enabled/mentraflow-frontend
 
-# If you have a default site, you may want to disable it
-# sudo rm /etc/nginx/sites-enabled/default
-```
+# Remove default site (optional)
+sudo rm /etc/nginx/sites-enabled/default
 
-**Note**: The nginx configuration is already set up to:
-- Serve the frontend from `/home/mentraflow/mentraflow-frontend/build`
-- Proxy API requests (`/api/*`) to the backend at `http://localhost:8000`
-- Handle React Router SPA routing
-
-### 3.3 Test and Reload Nginx
-
-```bash
 # Test nginx configuration
 sudo nginx -t
 
-# If test passes, reload nginx
+# Reload nginx
 sudo systemctl reload nginx
 ```
 
-## Step 4: Deploy the Application
+**Note**: The nginx configuration serves the frontend from `/home/mentraflow/mentraflow-frontend/build` and proxies API requests (`/api/*`) to the backend at `http://localhost:8000`.
 
-### 4.1 Make Deployment Script Executable
+### Step 4: Deploy the Application
 
 ```bash
+cd /home/mentraflow/mentraflow-frontend
+
+# Make deployment scripts executable
 chmod +x scripts/deploy.sh
-```
-
-### 4.2 Run Deployment Script
-
-```bash
-# Run the script (it will use sudo for nginx operations if needed)
-./scripts/deploy.sh
-```
-
-**Or use the update script** (recommended - pulls latest changes first):
-```bash
 chmod +x scripts/update.sh
-./scripts/update.sh
+
+# Run the initial deployment script
+./scripts/deploy.sh
 ```
 
 The script will:
 1. Check Node.js installation
 2. Install/update dependencies
-3. Build the production bundle
-4. Deploy new build to `/home/mentraflow/mentraflow-frontend/build`
+3. Build the production bundle (outputs to `dist/`)
+4. Copy `dist/` to `build/` for nginx
 5. Set proper permissions
 6. Test and reload nginx
 
-## Step 5: Configure Firewall (UFW)
-
-```bash
-# Allow SSH (if not already allowed)
-sudo ufw allow OpenSSH
-
-# Allow HTTP
-sudo ufw allow 'Nginx Full'
-
-# Enable firewall
-sudo ufw enable
-
-# Check status
-sudo ufw status
-```
-
-## Step 6: Verify Deployment
+### Step 5: Verify Deployment
 
 1. **Check if app is accessible:**
    - Open browser: `http://147.182.239.22`
    - You should see the MentraFlow homepage
-   - API calls should work (they're proxied to backend at `http://localhost:8000`)
 
 2. **Check nginx status:**
    ```bash
    sudo systemctl status nginx
    ```
 
-3. **Check nginx logs:**
+3. **Check logs:**
    ```bash
    sudo tail -f /var/log/nginx/error.log
    sudo tail -f /var/log/nginx/access.log
    ```
 
-## Step 7: Setup SSL/HTTPS (Optional but Recommended)
+## Updating the Deployment
 
-### 7.1 Install Certbot
+When you need to update the application:
+
+### Step 1: Copy Updated Code to Server
+
+**On your local machine:**
+
+```bash
+cd /path/to/mentraflow-frontend
+
+# Copy updated files using rsync
+rsync -avz \
+  --exclude='node_modules' \
+  --exclude='dist' \
+  --exclude='.git' \
+  --exclude='.env' \
+  ./ mentraflow@147.182.239.22:/home/mentraflow/mentraflow-frontend/
+```
+
+### Step 2: Run Update Script
+
+**On the server:**
+
+```bash
+ssh mentraflow@147.182.239.22
+cd /home/mentraflow/mentraflow-frontend
+./scripts/update.sh
+```
+
+The script will:
+- Update dependencies
+- Build production bundle
+- Deploy new build
+- Reload nginx
+
+**Note**: The update script does not pull from git. It assumes you've already copied the updated code using SCP.
+
+## SSL/HTTPS Setup (Optional but Recommended)
+
+### Install Certbot
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
 ```
 
-### 7.2 Obtain SSL Certificate
+### Obtain SSL Certificate
 
 ```bash
 # Replace with your domain
 sudo certbot --nginx -d your-domain.com -d www.your-domain.com
 ```
 
-Follow the prompts to set up SSL.
-
-### 7.3 Auto-renewal
-
-Certbot sets up auto-renewal automatically. Test it:
+### Test Auto-renewal
 
 ```bash
 sudo certbot renew --dry-run
 ```
-
-## Updating the Deployment
-
-When you need to update the application:
-
-1. **Pull latest changes:**
-   ```bash
-   cd /home/mentraflow/mentraflow-frontend
-   git pull origin main  # or your branch name
-   ```
-
-2. **Update environment variables if needed:**
-   ```bash
-   nano .env
-   ```
-
-3. **Run deployment script:**
-   ```bash
-   ./scripts/deploy.sh
-   ```
-   
-   **Or use the update script** (recommended - pulls latest changes first):
-   ```bash
-   ./scripts/update.sh
-   ```
 
 ## Troubleshooting
 
@@ -280,22 +253,22 @@ When you need to update the application:
 
 **Solution:**
 - Check browser console for errors
-- Verify environment variables are set correctly
-- Check if build completed successfully
+- Verify environment variables are set correctly: `cat .env`
+- Check if build completed successfully: `ls -la dist/`
 - Verify nginx is serving from correct directory
 
 ### Issue: API Calls Failing
 
 **Solution:**
-- Verify `REACT_APP_BACKEND_URL` in `.env` is correct
+- Verify `VITE_BACKEND_URL` in `.env` is correct
 - Check backend CORS settings allow your frontend domain
 - Check browser Network tab for CORS errors
 
 ### Issue: Google OAuth Not Working
 
 **Solution:**
-- Verify `REACT_APP_GOOGLE_CLIENT_ID` is set correctly
-- Check Google Cloud Console has your production domain in:
+- Verify `VITE_GOOGLE_CLIENT_ID` is set correctly
+- Check Google Cloud Console has your production IP in:
   - Authorized JavaScript origins
   - Authorized redirect URIs
 - Clear browser cache and try again
@@ -312,29 +285,6 @@ sudo tail -f /var/log/nginx/error.log
 # System logs
 sudo journalctl -u nginx -f
 ```
-
-## Rollback (If Needed)
-
-If you need to rollback to a previous version:
-
-1. **Checkout a previous commit:**
-   ```bash
-   cd /home/mentraflow/mentraflow-frontend
-   git log  # Find the commit hash you want
-   git checkout <commit-hash>
-   ```
-
-2. **Rebuild and deploy:**
-   ```bash
-   ./scripts/deploy.sh
-   ```
-
-3. **Or restore from git:**
-   ```bash
-   git checkout main  # or your branch
-   git pull
-   ./scripts/update.sh
-   ```
 
 ## Security Recommendations
 
@@ -353,25 +303,8 @@ If you need to rollback to a previous version:
 
 4. **Monitor logs** regularly for suspicious activity
 
-## Performance Optimization
-
-1. **Enable gzip compression** (already in nginx.conf)
-
-2. **Set up CDN** for static assets (optional)
-
-3. **Enable HTTP/2** in nginx (requires SSL)
-
-4. **Monitor server resources:**
-   ```bash
-   htop
-   # or
-   free -h
-   df -h
-   ```
-
 ## Additional Resources
 
 - [DigitalOcean Documentation](https://www.digitalocean.com/docs/)
 - [Nginx Documentation](https://nginx.org/en/docs/)
-- [React Deployment Guide](https://create-react-app.dev/docs/deployment/)
-
+- [Vite Deployment Guide](https://vitejs.dev/guide/static-deploy.html)
