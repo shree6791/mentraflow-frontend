@@ -7,13 +7,18 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { COLORS } from '../constants/theme';
 import { toast } from 'sonner';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Eye, EyeOff } from 'lucide-react';
+import { authService } from '../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login, signup, googleSignIn } = useAuth();
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState([]);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -22,12 +27,62 @@ const Login = () => {
     display_name: '',
   });
 
+  const validatePassword = (password) => {
+    const errors = [];
+    if (password.length < 8) {
+      errors.push('At least 8 characters');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('At least one uppercase letter');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('At least one lowercase letter');
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push('At least one number');
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      errors.push('At least one special character');
+    }
+    return errors;
+  };
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    
+    // Validate password in real-time for signup
+    if (isSignup && name === 'password') {
+      const errors = validatePassword(value);
+      setPasswordErrors(errors);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate password for signup
+    if (isSignup) {
+      const errors = validatePassword(formData.password);
+      if (errors.length > 0) {
+        setPasswordErrors(errors);
+        toast.error('Please fix password requirements');
+        return;
+      }
+      
+      // Validate required fields for signup
+      if (!formData.username || !formData.email || !formData.password) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+    } else {
+      // Validate required fields for login
+      if (!formData.email || !formData.password) {
+        toast.error('Please fill in email and password');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -40,7 +95,29 @@ const Login = () => {
       }
       navigate('/dashboard');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'An error occurred');
+      const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || 'An error occurred';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotPasswordEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await authService.forgotPassword(forgotPasswordEmail);
+      toast.success('Password reset link sent! Check your email.');
+      setShowForgotPassword(false);
+      setForgotPasswordEmail('');
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || 'Failed to send reset email';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -166,16 +243,52 @@ const Login = () => {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Password</label>
-              <Input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  placeholder="••••••••"
+                  className={isSignup && passwordErrors.length > 0 && formData.password ? 'border-red-300' : ''}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {isSignup && passwordErrors.length > 0 && formData.password && (
+                <div className="mt-2 text-xs text-red-600">
+                  <p className="font-medium mb-1">Password must contain:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {passwordErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {!isSignup && (
+                <div className="mt-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-brand-deepTeal hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading || (isSignup && passwordErrors.length > 0 && formData.password)}
+              style={{ backgroundColor: COLORS.brand.deepTeal, color: 'white' }}
+            >
               {loading ? 'Loading...' : isSignup ? 'Sign Up' : 'Sign In'}
             </Button>
           </form>
@@ -201,7 +314,11 @@ const Login = () => {
           <div className="mt-6 text-center text-sm">
             <button
               type="button"
-              onClick={() => setIsSignup(!isSignup)}
+              onClick={() => {
+                setIsSignup(!isSignup);
+                setPasswordErrors([]);
+                setShowForgotPassword(false);
+              }}
               className="hover:underline"
               style={{ color: COLORS.brand.deepTeal }}
             >
@@ -210,6 +327,43 @@ const Login = () => {
                 : "Don't have an account? Sign up"}
             </button>
           </div>
+
+          {/* Forgot Password Modal */}
+          {showForgotPassword && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-sm font-semibold mb-2">Reset Password</h3>
+              <form onSubmit={handleForgotPassword} className="space-y-2">
+                <Input
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={loading}
+                    style={{ backgroundColor: COLORS.brand.deepTeal, color: 'white' }}
+                  >
+                    Send Reset Link
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setForgotPasswordEmail('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
         </CardContent>
       </Card>
         </div>

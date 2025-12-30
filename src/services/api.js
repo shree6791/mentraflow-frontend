@@ -1,19 +1,47 @@
 // Centralized API Service Layer for FastAPI Backend Integration
+// 
+// AUTHENTICATION:
+// - Public endpoints (no auth required): Use publicClient
+//   - /health, /api/v1/health
+//   - /api/v1/version
+//   - /api/v1/auth/signup
+//   - /api/v1/auth/login
+//   - /api/v1/auth/google
+//   - /api/v1/auth/forgot-password
+//   - /api/v1/auth/reset-password
+//   - /api/v1/users/by-username/{username}
+//
+// - Protected endpoints (auth required): Use apiClient
+//   - All other endpoints require JWT token in Authorization header
+//   - Token is automatically added via request interceptor
+//   - 401 responses automatically clear tokens and redirect to login
+//
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+// Support both Vite (import.meta.env) and CRA (process.env) for compatibility
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 // Ensure backend URL doesn't have trailing slash
 const cleanBackendUrl = BACKEND_URL.replace(/\/$/, '');
 const API_BASE = `${cleanBackendUrl}/api/v1`;
 
 // Log API configuration in development (only once, not on every import)
-if (process.env.NODE_ENV === 'development' && !window.__API_CONFIG_LOGGED__) {
+if ((import.meta.env.MODE === 'development' || process.env.NODE_ENV === 'development') && !window.__API_CONFIG_LOGGED__) {
   console.log('Backend URL:', cleanBackendUrl);
   console.log('API Base:', API_BASE);
   window.__API_CONFIG_LOGGED__ = true;
 }
 
-// Create axios instance with default config
+// Create axios instance for public endpoints (no auth required)
+const publicClient = axios.create({
+  baseURL: API_BASE,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
+
+// Create axios instance with default config for protected endpoints
 const apiClient = axios.create({
   baseURL: API_BASE,
   timeout: 30000,
@@ -23,12 +51,16 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor - add auth token if available
+// Request interceptor - add auth token for protected endpoints
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // If no token and trying to access protected endpoint, redirect to login
+      // (This is handled by the 401 response interceptor, but we can log here)
+      console.warn('No access token found for protected endpoint:', config.url);
     }
     return config;
   },
@@ -76,13 +108,14 @@ apiClient.interceptors.response.use(
 );
 
 // ============================================
-// AUTH SERVICE
+// AUTH SERVICE (Public Endpoints)
 // ============================================
 export const authService = {
   signup: async (data) => {
-    const response = await apiClient.post('/auth/signup', data);
-    // Handle response that might be wrapped in 'result' object
-    const responseData = response.data.result || response.data;
+    // Public endpoint - no auth required
+    const response = await publicClient.post('/auth/signup', data);
+    // Backend returns user data with access_token directly
+    const responseData = response.data;
     if (responseData.access_token) {
       localStorage.setItem('access_token', responseData.access_token);
       localStorage.setItem('user', JSON.stringify(responseData));
@@ -91,9 +124,10 @@ export const authService = {
   },
 
   login: async (data) => {
-    const response = await apiClient.post('/auth/login', data);
-    // Handle response that might be wrapped in 'result' object
-    const responseData = response.data.result || response.data;
+    // Public endpoint - no auth required
+    const response = await publicClient.post('/auth/login', data);
+    // Backend returns user data with access_token directly
+    const responseData = response.data;
     if (responseData.access_token) {
       localStorage.setItem('access_token', responseData.access_token);
       localStorage.setItem('user', JSON.stringify(responseData));
@@ -102,9 +136,10 @@ export const authService = {
   },
 
   googleSignIn: async (data) => {
-    const response = await apiClient.post('/auth/google', data);
-    // Handle response that might be wrapped in 'result' object
-    const responseData = response.data.result || response.data;
+    // Public endpoint - no auth required
+    const response = await publicClient.post('/auth/google', data);
+    // Backend returns user data with access_token directly
+    const responseData = response.data;
     if (responseData.access_token) {
       localStorage.setItem('access_token', responseData.access_token);
       localStorage.setItem('user', JSON.stringify(responseData));
@@ -113,24 +148,51 @@ export const authService = {
   },
 
   logout: async () => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (error) {
+      // Logout endpoint may not be critical, continue with local cleanup
+      console.warn('Logout API call failed, clearing local storage anyway:', error);
+    }
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     return { message: 'Logged out successfully' };
   },
 
-  getCurrentUser: async (userId) => {
-    const response = await apiClient.get(`/auth/me?user_id=${userId}`);
-    // Handle response that might be wrapped in 'result' object
-    return response.data.result || response.data;
+  getCurrentUser: async () => {
+    const response = await apiClient.get('/auth/me');
+    // Backend returns user data directly
+    const responseData = response.data;
+    if (responseData.access_token) {
+      localStorage.setItem('access_token', responseData.access_token);
+      localStorage.setItem('user', JSON.stringify(responseData));
+    }
+    return responseData;
+  },
+
+  forgotPassword: async (email) => {
+    // Public endpoint - no auth required
+    const response = await publicClient.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  resetPassword: async (token, newPassword) => {
+    // Public endpoint - no auth required
+    const response = await publicClient.post('/auth/reset-password', {
+      token,
+      new_password: newPassword,
+    });
+    return response.data;
   },
 };
 
 // ============================================
-// WORKSPACE SERVICE
+// WORKSPACE SERVICE (Protected Endpoints)
 // ============================================
 export const workspaceService = {
-  create: async (ownerUsername, data) => {
-    const response = await apiClient.post(`/workspaces?owner_username=${ownerUsername}`, data);
+  create: async (data) => {
+    // Protected endpoint - user is extracted from JWT token
+    const response = await apiClient.post('/workspaces', data);
     return response.data;
   },
 
@@ -157,15 +219,17 @@ export const workspaceService = {
 };
 
 // ============================================
-// DOCUMENT SERVICE
+// DOCUMENT SERVICE (Protected Endpoints)
 // ============================================
 export const documentService = {
   create: async (data) => {
+    // Protected endpoint - requires workspace_id in body
     const response = await apiClient.post('/documents', data);
     return response.data;
   },
 
   list: async (workspaceId) => {
+    // Protected endpoint
     const response = await apiClient.get(`/workspaces/${workspaceId}/documents`);
     return response.data;
   },
@@ -377,11 +441,35 @@ export const agentRunsService = {
 };
 
 // ============================================
-// HEALTH CHECK
+// USER SERVICE (Public Endpoint for lookup)
+// ============================================
+export const userService = {
+  getByUsername: async (username) => {
+    // Public endpoint - no auth required
+    const response = await publicClient.get(`/users/by-username/${username}`);
+    return response.data;
+  },
+};
+
+// ============================================
+// HEALTH CHECK (Public Endpoints)
 // ============================================
 export const healthService = {
   check: async () => {
-    const response = await axios.get(`${BACKEND_URL}/health`);
+    // Public endpoint - no auth required
+    const response = await axios.get(`${cleanBackendUrl}/health`);
+    return response.data;
+  },
+  
+  checkV1: async () => {
+    // Public endpoint - no auth required
+    const response = await publicClient.get('/health');
+    return response.data;
+  },
+  
+  getVersion: async () => {
+    // Public endpoint - no auth required
+    const response = await publicClient.get('/version');
     return response.data;
   },
 };

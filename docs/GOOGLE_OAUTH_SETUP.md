@@ -43,10 +43,12 @@ Alternatively, you can use the newer **"Google Identity Services"** which is rec
 7. **Authorized JavaScript origins**:
    - Add: `http://localhost:3000` (for development)
    - Add: `http://localhost:3001` (if you use a different port)
-   - Add your production URL when deploying (e.g., `https://yourdomain.com`)
+   - **Important**: For production, you MUST use a domain name (e.g., `https://yourdomain.com`)
+   - ⚠️ **IP addresses are NOT allowed** - Google requires a valid domain with a top-level domain (e.g., `.com`, `.org`)
 8. **Authorized redirect URIs**:
    - Add: `http://localhost:3000` (for development)
-   - Add your production URL when deploying
+   - **Important**: For production, you MUST use a domain name (e.g., `https://yourdomain.com`)
+   - ⚠️ **IP addresses are NOT allowed** - Google requires a valid domain with a top-level domain
 9. Click **"Create"**
 
 ## Step 5: Copy Your Client ID
@@ -118,12 +120,32 @@ function App() {
 
 When deploying to production:
 
-1. Add your production URL to **Authorized JavaScript origins**:
-   - `https://yourdomain.com`
-2. Add your production URL to **Authorized redirect URIs**:
-   - `https://yourdomain.com`
-3. Update your production `.env` file with the same Client ID
-4. Make sure your OAuth consent screen is **Published** (not in testing mode)
+1. **Get a domain name** (required - IP addresses don't work):
+   - Purchase a domain from providers like Namecheap, GoDaddy, Google Domains, etc.
+   - Point your domain's A record to your server IP (e.g., `147.182.239.22`)
+   - Wait for DNS propagation (can take a few minutes to 48 hours)
+
+2. Add your production domain to **Authorized JavaScript origins**:
+   - `https://yourdomain.com` (use `https://` if you have SSL, `http://` if not)
+   - Example: `https://mentraflow.com` or `http://mentraflow.com`
+
+3. Add your production domain to **Authorized redirect URIs**:
+   - `https://yourdomain.com` (use `https://` if you have SSL, `http://` if not)
+   - Example: `https://mentraflow.com` or `http://mentraflow.com`
+
+4. Update your production `.env` file:
+   ```env
+   VITE_BACKEND_URL=https://yourdomain.com
+   VITE_GOOGLE_CLIENT_ID=your-client-id-here.apps.googleusercontent.com
+   ```
+
+5. Make sure your OAuth consent screen is **Published** (not in testing mode)
+
+### ⚠️ Important Notes:
+- **IP addresses are NOT supported** by Google OAuth (e.g., `http://147.182.239.22` won't work)
+- You **must** use a domain name with a top-level domain (`.com`, `.org`, `.net`, etc.)
+- For testing without a domain, you can use `localhost` only
+- Consider using a service like ngrok for temporary testing (not recommended for production)
 
 ## Security Notes
 

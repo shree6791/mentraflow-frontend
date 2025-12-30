@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { COLORS } from '../constants/theme';
-import { Brain, TrendingUp, Clock, Target } from 'lucide-react';
+import { Brain, TrendingUp, Clock, Target, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Features = () => {
+  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
+  
   const features = [
     {
       icon: TrendingUp,
@@ -46,7 +48,8 @@ const Features = () => {
               Guided by your forgetting curve, we reinforce knowledge at optimal intervals to ensure it sticks
             </p>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Desktop Grid */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {features.map((feature, index) => (
                 <div
                   key={index}
@@ -63,6 +66,63 @@ const Features = () => {
                   <p className="text-gray-600 leading-relaxed text-sm">{feature.description}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Mobile Carousel */}
+            <div className="md:hidden relative">
+              <div className="overflow-hidden">
+                <div 
+                  className="flex transition-transform duration-300 ease-in-out"
+                  style={{ transform: `translateX(-${currentFeatureIndex * 100}%)` }}
+                >
+                  {features.map((feature, index) => (
+                    <div
+                      key={index}
+                      className="min-w-full bg-gray-50 rounded-lg p-6 shadow-sm border-2 border-gray-200"
+                      style={{
+                        borderTopColor: feature.color,
+                        borderTopWidth: '4px',
+                      }}
+                    >
+                      <div className="w-16 h-16 rounded-lg flex items-center justify-center mb-4 bg-white mx-auto" style={{ backgroundColor: `${feature.color}15` }}>
+                        <feature.icon className="h-8 w-8" style={{ color: feature.color }} />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2 text-gray-900 text-center">{feature.title}</h3>
+                      <p className="text-gray-600 leading-relaxed text-sm text-center">{feature.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Carousel Controls */}
+              <div className="flex justify-center items-center mt-4 space-x-2">
+                <button
+                  onClick={() => setCurrentFeatureIndex((prev) => (prev > 0 ? prev - 1 : features.length - 1))}
+                  className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow"
+                  aria-label="Previous feature"
+                >
+                  <ChevronLeft className="h-5 w-5 text-gray-700" />
+                </button>
+                <div className="flex space-x-1">
+                  {features.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentFeatureIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentFeatureIndex ? 'w-8 bg-brand-deepTeal' : 'w-2 bg-gray-300'
+                      }`}
+                      aria-label={`Go to feature ${index + 1}`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => setCurrentFeatureIndex((prev) => (prev < features.length - 1 ? prev + 1 : 0))}
+                  className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow"
+                  aria-label="Next feature"
+                >
+                  <ChevronRight className="h-5 w-5 text-gray-700" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

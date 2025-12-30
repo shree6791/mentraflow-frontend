@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { COLORS } from '../constants/theme';
-import { Brain, ChevronDown, Clock, Instagram, Facebook, MapPin } from 'lucide-react';
+import { Brain, ChevronDown, Clock, Instagram, Facebook, MapPin, Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
 
 const PublicLayout = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const timeoutRef = useRef(null);
 
@@ -42,7 +43,7 @@ const PublicLayout = ({ children }) => {
               </div>
             </Link>
             
-            {/* Navigation Links - Right Aligned */}
+            {/* Desktop Navigation Links - Right Aligned */}
             <div className="hidden md:flex items-center space-x-8 ml-auto mr-8">
               <Link to="/about" className="text-gray-700 hover:text-brand-deepTeal transition-colors font-medium">
                 About
@@ -105,8 +106,17 @@ const PublicLayout = ({ children }) => {
               </Link>
             </div>
             
-            {/* Auth Button */}
-            <div className="flex items-center">
+            {/* Mobile Menu Button */}
+            <button
+              className="md:hidden p-2 text-gray-700 hover:text-brand-deepTeal transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+            
+            {/* Desktop Auth Button */}
+            <div className="hidden md:flex items-center">
               {isAuthenticated ? (
                 <Link to="/dashboard">
                   <Button variant="outline">Dashboard</Button>
@@ -120,6 +130,73 @@ const PublicLayout = ({ children }) => {
               )}
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 bg-white">
+              <div className="px-4 py-4 space-y-3">
+                <Link 
+                  to="/about" 
+                  className="block py-2 text-gray-700 hover:text-brand-deepTeal transition-colors font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  About
+                </Link>
+                
+                <div className="border-t border-gray-200 pt-3">
+                  <p className="text-sm font-semibold text-gray-900 mb-2">Services</p>
+                  <div className="pl-4 space-y-2">
+                    <Link 
+                      to="/features" 
+                      className="block py-2 text-gray-600 hover:text-brand-deepTeal transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Features
+                    </Link>
+                    <Link 
+                      to="/pricing" 
+                      className="block py-2 text-gray-600 hover:text-brand-deepTeal transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Pricing
+                    </Link>
+                    <Link 
+                      to="/faq" 
+                      className="block py-2 text-gray-600 hover:text-brand-deepTeal transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      FAQ
+                    </Link>
+                  </div>
+                </div>
+                
+                <Link 
+                  to="/contact" 
+                  className="block py-2 text-gray-700 hover:text-brand-deepTeal transition-colors font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Contact
+                </Link>
+                
+                <div className="border-t border-gray-200 pt-3">
+                  {isAuthenticated ? (
+                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">Dashboard</Button>
+                    </Link>
+                  ) : (
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                      <Button 
+                        className="w-full text-white font-semibold"
+                        style={{ backgroundColor: COLORS.brand.deepTeal }}
+                      >
+                        Sign In
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </nav>
       </header>
 

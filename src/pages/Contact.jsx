@@ -104,8 +104,8 @@ const Contact = () => {
                 </form>
               </div>
 
-              {/* Map Section */}
-              <div className="h-full flex flex-col">
+              {/* Map Section - Hidden on Mobile */}
+              <div className="hidden md:flex h-full flex-col">
                 <div className="rounded-lg overflow-hidden shadow-lg border border-gray-200 flex-1 min-h-[500px]">
                   <iframe
                     src="https://www.google.com/maps?q=Mountain+View,+CA+94040&output=embed"

@@ -5,6 +5,7 @@ This guide will help you deploy the MentraFlow frontend to your existing Digital
 ## Configuration
 
 - **Droplet IP**: `147.182.239.22`
+- **Domain**: `getmentraflow.com`
 - **SSH User**: `mentraflow`
 - **Frontend Directory**: `/home/mentraflow/mentraflow-frontend`
 
@@ -114,13 +115,18 @@ nano .env
 
 Update the `.env` file with:
 ```env
-VITE_BACKEND_URL=http://147.182.239.22
+# Use https:// once SSL is configured, http:// for initial setup
+VITE_BACKEND_URL=https://getmentraflow.com
 VITE_GOOGLE_CLIENT_ID=your-google-client-id-here.apps.googleusercontent.com
 ```
 
-**Important**: Make sure your Google OAuth Client ID has your production IP added to:
-- **Authorized JavaScript origins**: `http://147.182.239.22`
-- **Authorized redirect URIs**: `http://147.182.239.22`
+**Important**: For Google OAuth, configure your domain `getmentraflow.com`:
+- **Authorized JavaScript origins**: 
+  - `http://localhost:3000` (for development)
+  - `https://getmentraflow.com` (for production - after SSL setup)
+  - `http://getmentraflow.com` (temporary, until SSL is configured)
+- **Authorized redirect URIs**: Same as above
+- ⚠️ **IP addresses like `http://147.182.239.22` will NOT work** - Google requires a valid domain
 
 ### Step 3: Configure Nginx
 
@@ -143,7 +149,31 @@ sudo systemctl reload nginx
 
 **Note**: The nginx configuration serves the frontend from `/home/mentraflow/mentraflow-frontend/build` and proxies API requests (`/api/*`) to the backend at `http://localhost:8000`.
 
-### Step 4: Deploy the Application
+### Step 4: Set Up SSL (HTTPS) with Let's Encrypt
+
+Once your domain DNS has propagated (test with `ping getmentraflow.com`), set up SSL:
+
+```bash
+# Install Certbot
+sudo apt update
+sudo apt install certbot python3-certbot-nginx -y
+
+# Obtain SSL certificate (replace with your email)
+sudo certbot --nginx -d getmentraflow.com -d www.getmentraflow.com --email your-email@example.com --agree-tos --non-interactive
+
+# Certbot will automatically configure nginx for HTTPS
+# It will also set up automatic renewal
+
+# Test the renewal process
+sudo certbot renew --dry-run
+```
+
+After SSL is set up:
+1. **Update your `.env` file** on the server: `VITE_BACKEND_URL=https://getmentraflow.com`
+2. **Update Google Cloud Console** to use `https://getmentraflow.com` (you can keep `http://` for now too)
+3. **Rebuild and redeploy** the frontend
+
+### Step 5: Deploy the Application
 
 ```bash
 cd /home/mentraflow/mentraflow-frontend

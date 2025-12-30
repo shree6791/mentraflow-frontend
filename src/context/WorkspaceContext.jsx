@@ -58,7 +58,7 @@ export const WorkspaceProvider = ({ children }) => {
     
     setLoading(true);
     try {
-      const newWorkspace = await workspaceService.create(user.username, {
+      const newWorkspace = await workspaceService.create({
         name,
         plan_tier: planTier,
       });

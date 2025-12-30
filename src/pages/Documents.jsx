@@ -4,7 +4,7 @@ import { documentService } from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { FileText, Upload, Plus, Loader2 } from 'lucide-react';
+import { FileText, Upload, Plus, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Documents = () => {
@@ -13,6 +13,7 @@ const Documents = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [currentDocIndex, setCurrentDocIndex] = useState(0);
   const [uploadData, setUploadData] = useState({
     title: '',
     content: '',
@@ -159,7 +160,9 @@ const Documents = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <>
+          {/* Desktop Grid */}
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {documents.map((doc) => (
             <Card key={doc.id} className="card-hover">
               <CardHeader>
@@ -181,6 +184,72 @@ const Documents = () => {
             </Card>
           ))}
         </div>
+
+          {/* Mobile Carousel */}
+          <div className="md:hidden relative">
+            <div className="overflow-hidden">
+              <div 
+                className="flex transition-transform duration-300 ease-in-out"
+                style={{ transform: `translateX(-${currentDocIndex * 100}%)` }}
+              >
+                {documents.map((doc) => (
+                  <div key={doc.id} className="min-w-full">
+                    <Card className="card-hover">
+                      <CardHeader>
+                        <CardTitle className="text-lg">{doc.title || 'Untitled'}</CardTitle>
+                        <CardDescription>
+                          {doc.doc_type} • {doc.status}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-500">
+                            {new Date(doc.created_at).toLocaleDateString()}
+                          </span>
+                          <Button variant="ghost" size="sm">
+                            View
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Carousel Controls */}
+            {documents.length > 1 && (
+              <div className="flex justify-center items-center mt-4 space-x-2">
+                <button
+                  onClick={() => setCurrentDocIndex((prev) => (prev > 0 ? prev - 1 : documents.length - 1))}
+                  className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow"
+                  aria-label="Previous document"
+                >
+                  <ChevronLeft className="h-5 w-5 text-gray-700" />
+                </button>
+                <div className="flex space-x-1">
+                  {documents.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentDocIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentDocIndex ? 'w-8 bg-primary-teal' : 'w-2 bg-gray-300'
+                      }`}
+                      aria-label={`Go to document ${index + 1}`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => setCurrentDocIndex((prev) => (prev < documents.length - 1 ? prev + 1 : 0))}
+                  className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow"
+                  aria-label="Next document"
+                >
+                  <ChevronRight className="h-5 w-5 text-gray-700" />
+                </button>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

@@ -24,6 +24,20 @@ export const AuthProvider = ({ children }) => {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
+        
+        // Optionally verify token is still valid by calling /auth/me
+        // This runs in the background and updates user if token is valid
+        authService.getCurrentUser()
+          .then((currentUser) => {
+            setUser(currentUser);
+          })
+          .catch((error) => {
+            // Token is invalid, clear storage
+            console.error('Token validation failed:', error);
+            localStorage.removeItem('user');
+            localStorage.removeItem('access_token');
+            setUser(null);
+          });
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('user');
@@ -33,9 +47,9 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (credentials) => {
     try {
-      const response = await authService.login({ email, password });
+      const response = await authService.login(credentials);
       setUser(response);
       return response;
     } catch (error) {
@@ -66,11 +80,21 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await authService.logout();
-      setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
-      // Clear local state even if API call fails
+    } finally {
+      // Always clear local state
       setUser(null);
+    }
+  };
+
+  const getCurrentUser = async () => {
+    try {
+      const user = await authService.getCurrentUser();
+      setUser(user);
+      return user;
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -81,6 +105,7 @@ export const AuthProvider = ({ children }) => {
     signup,
     googleSignIn,
     logout,
+    getCurrentUser,
     isAuthenticated: !!user,
   };
 

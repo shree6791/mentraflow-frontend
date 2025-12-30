@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { COLORS } from '../constants/theme';
-import { Award, Users, TrendingUp } from 'lucide-react';
+import { Award, Users, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const About = () => {
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+
   return (
     <>
       {/* About Content */}
@@ -24,7 +26,8 @@ const About = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {/* Desktop Grid */}
+            <div className="hidden md:grid md:grid-cols-3 gap-6 mb-12">
               <div className="text-center p-6 rounded-lg bg-white border border-gray-200">
                 <Award className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.brand.deepTeal }} />
                 <h3 className="font-semibold text-gray-900 mb-2 text-lg">Executive Education</h3>
@@ -39,6 +42,62 @@ const About = () => {
                 <TrendingUp className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.brand.neuroYellow }} />
                 <h3 className="font-semibold text-gray-900 mb-2 text-lg">Long-Term Impact</h3>
                 <p className="text-sm text-gray-600">Knowledge compounds, not decays</p>
+              </div>
+            </div>
+
+            {/* Mobile Carousel */}
+            <div className="md:hidden mb-12 relative">
+              <div className="overflow-hidden">
+                <div 
+                  className="flex transition-transform duration-300 ease-in-out"
+                  style={{ transform: `translateX(-${currentCardIndex * 100}%)` }}
+                >
+                  <div className="min-w-full text-center p-6 rounded-lg bg-white border border-gray-200">
+                    <Award className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.brand.deepTeal }} />
+                    <h3 className="font-semibold text-gray-900 mb-2 text-lg">Executive Education</h3>
+                    <p className="text-sm text-gray-600">Piloting with UChicago Booth</p>
+                  </div>
+                  <div className="min-w-full text-center p-6 rounded-lg bg-white border border-gray-200">
+                    <Users className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.brand.mindBlue }} />
+                    <h3 className="font-semibold text-gray-900 mb-2 text-lg">Professional Focus</h3>
+                    <p className="text-sm text-gray-600">Built for knowledge workers</p>
+                  </div>
+                  <div className="min-w-full text-center p-6 rounded-lg bg-white border border-gray-200">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4" style={{ color: COLORS.brand.neuroYellow }} />
+                    <h3 className="font-semibold text-gray-900 mb-2 text-lg">Long-Term Impact</h3>
+                    <p className="text-sm text-gray-600">Knowledge compounds, not decays</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Carousel Controls */}
+              <div className="flex justify-center items-center mt-4 space-x-2">
+                <button
+                  onClick={() => setCurrentCardIndex((prev) => (prev > 0 ? prev - 1 : 2))}
+                  className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow"
+                  aria-label="Previous card"
+                >
+                  <ChevronLeft className="h-5 w-5 text-gray-700" />
+                </button>
+                <div className="flex space-x-1">
+                  {[0, 1, 2].map((index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentCardIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentCardIndex ? 'w-8 bg-brand-deepTeal' : 'w-2 bg-gray-300'
+                      }`}
+                      aria-label={`Go to card ${index + 1}`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => setCurrentCardIndex((prev) => (prev < 2 ? prev + 1 : 0))}
+                  className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow"
+                  aria-label="Next card"
+                >
+                  <ChevronRight className="h-5 w-5 text-gray-700" />
+                </button>
               </div>
             </div>
 
