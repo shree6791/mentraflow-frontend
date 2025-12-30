@@ -3,22 +3,20 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { documentService } from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { FileText, Upload, Plus, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, Plus, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Clock, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import DocumentUpload from '../components/DocumentUpload';
+import DocumentDetail from '../components/DocumentDetail';
+import { COLORS } from '../constants/theme';
 
 const Documents = () => {
   const { currentWorkspace, user } = useWorkspace();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [showDocumentDetail, setShowDocumentDetail] = useState(false);
   const [currentDocIndex, setCurrentDocIndex] = useState(0);
-  const [uploadData, setUploadData] = useState({
-    title: '',
-    content: '',
-    doc_type: 'text',
-  });
 
   useEffect(() => {
     if (currentWorkspace) {
@@ -41,32 +39,9 @@ const Documents = () => {
     }
   };
 
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!currentWorkspace || !user) return;
-
-    setUploading(true);
-    try {
-      const newDoc = await documentService.create({
-        workspace_id: currentWorkspace.id,
-        user_id: user.user_id,
-        title: uploadData.title || 'Untitled Document',
-        content: uploadData.content,
-        doc_type: uploadData.doc_type,
-        language: 'en',
-        metadata: {},
-      });
-
-      toast.success('Document uploaded! Processing will begin shortly.');
-      setShowUpload(false);
-      setUploadData({ title: '', content: '', doc_type: 'text' });
-      loadDocuments();
-    } catch (error) {
-      console.error('Error uploading document:', error);
-      toast.error(error.response?.data?.detail || 'Failed to upload document');
-    } finally {
-      setUploading(false);
-    }
+  const handleUploadSuccess = (newDoc) => {
+    // Reload documents to show the new one
+    loadDocuments();
   };
 
   if (!currentWorkspace) {
@@ -74,7 +49,7 @@ const Documents = () => {
       <div className="p-8">
         <Card>
           <CardContent className="p-8 text-center">
-            <p>Please select a workspace</p>
+            <p className="text-gray-600">Please select a workspace to view documents</p>
           </CardContent>
         </Card>
       </div>
@@ -82,108 +57,176 @@ const Documents = () => {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-6 md:p-8 h-full flex flex-col bg-gray-50">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8 flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Documents</h1>
-          <p className="text-gray-600">Manage your study materials</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-3" style={{ color: COLORS.brand.deepTeal }}>
+            Documents
+          </h1>
+          <p className="text-gray-600 text-lg">Upload and manage your study materials</p>
         </div>
-        <Button onClick={() => setShowUpload(!showUpload)}>
+        <Button 
+          onClick={() => setShowUpload(true)}
+          style={{ backgroundColor: COLORS.brand.deepTeal, color: 'white' }}
+          className="hidden md:flex"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Upload Document
         </Button>
       </div>
 
-      {showUpload && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Upload New Document</CardTitle>
-            <CardDescription>Add a new document to your workspace</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Title</label>
-                <Input
-                  value={uploadData.title}
-                  onChange={(e) => setUploadData({ ...uploadData, title: e.target.value })}
-                  placeholder="Document title"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Content</label>
-                <textarea
-                  className="w-full min-h-[200px] px-3 py-2 border border-input rounded-md"
-                  value={uploadData.content}
-                  onChange={(e) => setUploadData({ ...uploadData, content: e.target.value })}
-                  placeholder="Paste your document content here..."
-                  required
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={uploading}>
-                  {uploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload
-                    </>
-                  )}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setShowUpload(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      {/* Mobile Upload Button */}
+      <div className="md:hidden mb-6">
+        <Button 
+          onClick={() => setShowUpload(true)}
+          style={{ backgroundColor: COLORS.brand.deepTeal, color: 'white' }}
+          className="w-full"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Upload Document
+        </Button>
+      </div>
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary-teal" />
-        </div>
-      ) : documents.length === 0 ? (
-        <Card>
+      <DocumentUpload
+        open={showUpload}
+        onOpenChange={setShowUpload}
+        onSuccess={handleUploadSuccess}
+      />
+
+      <DocumentDetail
+        document={selectedDocument}
+        open={showDocumentDetail}
+        onOpenChange={setShowDocumentDetail}
+      />
+
+      <div className="flex-1 min-h-0 overflow-y-auto pb-6">
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-teal" />
+          </div>
+        ) : documents.length === 0 ? (
+          <Card className="border-2 border-dashed border-gray-300">
           <CardContent className="p-12 text-center">
-            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No documents yet</h3>
-            <p className="text-gray-600 mb-6">Upload your first document to get started</p>
-            <Button onClick={() => setShowUpload(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Upload Document
+            <div 
+              className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center"
+              style={{ backgroundColor: `${COLORS.brand.deepTeal}15` }}
+            >
+              <FileText 
+                className="h-8 w-8" 
+                style={{ color: COLORS.brand.deepTeal }}
+              />
+            </div>
+            <h3 className="text-2xl font-bold mb-2 text-gray-900">No documents yet</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Upload your first document to start building your knowledge base. We'll automatically create flashcards and build a knowledge graph for you.
+            </p>
+            <Button 
+              onClick={() => setShowUpload(true)}
+              size="lg"
+              style={{ backgroundColor: COLORS.brand.deepTeal, color: 'white' }}
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Upload Your First Document
             </Button>
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <p className="text-sm text-gray-500 mb-4">Supported formats:</p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">PDF</span>
+                <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">DOCX</span>
+                <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">TXT</span>
+                <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">Markdown</span>
+                <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700">Notes</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       ) : (
         <>
           {/* Desktop Grid */}
           <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {documents.map((doc) => (
-            <Card key={doc.id} className="card-hover">
-              <CardHeader>
-                <CardTitle className="text-lg">{doc.title || 'Untitled'}</CardTitle>
-                <CardDescription>
-                  {doc.doc_type} • {doc.status}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">
-                    {new Date(doc.created_at).toLocaleDateString()}
-                  </span>
-                  <Button variant="ghost" size="sm">
-                    View
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+            {documents.map((doc) => {
+              const getStatusIcon = () => {
+                if (doc.status === 'processed' || doc.status === 'completed') {
+                  return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+                }
+                if (doc.status === 'processing' || doc.status === 'ingesting') {
+                  return <Loader2 className="h-4 w-4 animate-spin text-primary-teal" />;
+                }
+                return <Clock className="h-4 w-4 text-yellow-500" />;
+              };
+
+              const getStatusText = () => {
+                if (doc.status === 'processed' || doc.status === 'completed') {
+                  return 'Ready';
+                }
+                if (doc.status === 'processing' || doc.status === 'ingesting') {
+                  return 'Processing';
+                }
+                return 'Pending';
+              };
+
+              return (
+                <Card key={doc.id} className="card-hover transition-all hover:shadow-lg">
+                  <CardHeader>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg truncate">{doc.title || 'Untitled'}</CardTitle>
+                      </div>
+                      {getStatusIcon()}
+                    </div>
+                    <CardDescription className="flex items-center gap-2">
+                      <span className="capitalize">{doc.doc_type}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        {getStatusText()}
+                      </span>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">
+                          {new Date(doc.created_at).toLocaleDateString()}
+                        </span>
+                        {(doc.status === 'processed' || doc.status === 'completed') && (
+                          <div className="flex items-center gap-1 text-primary-teal">
+                            <Sparkles className="h-3 w-3" />
+                            <span className="text-xs">Ready</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => {
+                            setSelectedDocument(doc);
+                            setShowDocumentDetail(true);
+                          }}
+                        >
+                          View
+                        </Button>
+                        {(doc.status === 'processed' || doc.status === 'completed') && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedDocument(doc);
+                              setShowDocumentDetail(true);
+                            }}
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
 
           {/* Mobile Carousel */}
           <div className="md:hidden relative">
@@ -192,28 +235,73 @@ const Documents = () => {
                 className="flex transition-transform duration-300 ease-in-out"
                 style={{ transform: `translateX(-${currentDocIndex * 100}%)` }}
               >
-                {documents.map((doc) => (
-                  <div key={doc.id} className="min-w-full">
-                    <Card className="card-hover">
-                      <CardHeader>
-                        <CardTitle className="text-lg">{doc.title || 'Untitled'}</CardTitle>
-                        <CardDescription>
-                          {doc.doc_type} • {doc.status}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">
-                            {new Date(doc.created_at).toLocaleDateString()}
-                          </span>
-                          <Button variant="ghost" size="sm">
-                            View
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                ))}
+                {documents.map((doc) => {
+                  const getStatusIcon = () => {
+                    if (doc.status === 'processed' || doc.status === 'completed') {
+                      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+                    }
+                    if (doc.status === 'processing' || doc.status === 'ingesting') {
+                      return <Loader2 className="h-4 w-4 animate-spin text-primary-teal" />;
+                    }
+                    return <Clock className="h-4 w-4 text-yellow-500" />;
+                  };
+
+                  const getStatusText = () => {
+                    if (doc.status === 'processed' || doc.status === 'completed') {
+                      return 'Ready';
+                    }
+                    if (doc.status === 'processing' || doc.status === 'ingesting') {
+                      return 'Processing';
+                    }
+                    return 'Pending';
+                  };
+
+                  return (
+                    <div key={doc.id} className="min-w-full">
+                      <Card className="card-hover">
+                        <CardHeader>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-lg truncate">{doc.title || 'Untitled'}</CardTitle>
+                            </div>
+                            {getStatusIcon()}
+                          </div>
+                          <CardDescription className="flex items-center gap-2">
+                            <span className="capitalize">{doc.doc_type}</span>
+                            <span>•</span>
+                            <span>{getStatusText()}</span>
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-500">
+                                {new Date(doc.created_at).toLocaleDateString()}
+                              </span>
+                              {(doc.status === 'processed' || doc.status === 'completed') && (
+                                <div className="flex items-center gap-1 text-primary-teal">
+                                  <Sparkles className="h-3 w-3" />
+                                  <span className="text-xs">Ready</span>
+                                </div>
+                              )}
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => {
+                                setSelectedDocument(doc);
+                                setShowDocumentDetail(true);
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             
@@ -250,10 +338,12 @@ const Documents = () => {
             )}
           </div>
         </>
-      )}
+        )}
+      </div>
     </div>
   );
 };
 
 export default Documents;
+
 

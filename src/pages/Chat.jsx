@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { MessageSquare, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { COLORS } from '../constants/theme';
 
 const Chat = () => {
   const { currentWorkspace, user } = useWorkspace();
@@ -81,14 +82,17 @@ const Chat = () => {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto h-[calc(100vh-4rem)] flex flex-col">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Knowledge Assistant</h1>
-        <p className="text-gray-600">Ask questions about your documents. Answers are reinforced through adaptive recall.</p>
+    <div className="p-6 md:p-8 h-full flex flex-col bg-gray-50">
+      {/* Header */}
+      <div className="mb-6 flex-shrink-0">
+        <h1 className="text-3xl md:text-4xl font-bold mb-3" style={{ color: COLORS.brand.deepTeal }}>
+          Knowledge Assistant
+        </h1>
+        <p className="text-gray-600 text-lg">Ask questions about your documents. Answers are reinforced through adaptive recall.</p>
       </div>
 
-      <Card className="flex-1 flex flex-col mb-4">
-        <CardContent className="flex-1 overflow-y-auto p-6">
+      <Card className="flex-1 flex flex-col mb-4 min-h-0">
+        <CardContent className="flex-1 overflow-y-auto p-6 min-h-0">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquare className="h-16 w-16 text-gray-400 mb-4" />
@@ -135,7 +139,7 @@ const Chat = () => {
         </CardContent>
       </Card>
 
-      <form onSubmit={handleSend} className="flex gap-2">
+      <form onSubmit={handleSend} className="flex gap-2 flex-shrink-0">
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}

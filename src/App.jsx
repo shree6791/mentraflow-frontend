@@ -133,11 +133,15 @@ function AppContent() {
 }
 
 function App() {
-  const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+  // Use Vite's import.meta.env for environment variables
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
   // Log for debugging
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
     console.log('App rendering, Google Client ID:', clientId ? 'Set' : 'Not set');
+    if (!clientId) {
+      console.warn('⚠️ VITE_GOOGLE_CLIENT_ID is not set in .env file');
+    }
   }
 
   return (

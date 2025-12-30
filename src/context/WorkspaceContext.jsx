@@ -38,9 +38,20 @@ export const WorkspaceProvider = ({ children }) => {
       const data = await workspaceService.list(user.user_id);
       setWorkspaces(data || []);
       
+      // Try to restore previously selected workspace from localStorage
+      const savedWorkspaceId = localStorage.getItem('current_workspace_id');
+      if (savedWorkspaceId && data && data.length > 0) {
+        const savedWorkspace = data.find(w => w.id === savedWorkspaceId);
+        if (savedWorkspace) {
+          setCurrentWorkspace(savedWorkspace);
+          return;
+        }
+      }
+      
       // Set first workspace as current if none selected
       if (!currentWorkspace && data && data.length > 0) {
         setCurrentWorkspace(data[0]);
+        localStorage.setItem('current_workspace_id', data[0].id);
       }
     } catch (error) {
       console.error('Error loading workspaces:', error);
@@ -51,16 +62,18 @@ export const WorkspaceProvider = ({ children }) => {
     }
   };
 
-  const createWorkspace = async (name, planTier = 'free') => {
+  const createWorkspace = async (name) => {
     if (!user?.username) {
       throw new Error('User must be logged in to create workspace');
     }
     
+    // Always use 'free' plan tier by default
+    // Plan tier will be updated separately when user upgrades to paid plan (TODO: future feature)
     setLoading(true);
     try {
       const newWorkspace = await workspaceService.create({
         name,
-        plan_tier: planTier,
+        plan_tier: 'free',
       });
       setWorkspaces((prev) => [...prev, newWorkspace]);
       setCurrentWorkspace(newWorkspace);
@@ -116,6 +129,7 @@ export const WorkspaceProvider = ({ children }) => {
   const value = {
     workspaces,
     currentWorkspace,
+    user, // Expose user from AuthContext
     loading,
     createWorkspace,
     selectWorkspace,
