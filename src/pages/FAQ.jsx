@@ -2,45 +2,96 @@ import React from 'react';
 import { COLORS } from '../constants/theme';
 
 const FAQ = () => {
-  const faqs = [
+  const groups = [
     {
-      question: 'How does adaptive recall work?',
-      answer: 'MentraFlow uses your forgetting curve to determine the optimal time to reinforce knowledge. The system adapts to your memory patterns, showing you content right before you\'re likely to forget it.',
+      heading: 'What it is',
+      faqs: [
+        {
+          question: 'What is MentraFlow?',
+          answer: 'MentraFlow is a decision-readiness platform for regulated environments where getting decisions wrong has real consequences. We convert compliance workflows and certification programs into real-world decision simulations, continuously measuring and improving how employees make decisions over time—so organizations move from training completion to demonstrated decision capability.',
+        },
+      ],
     },
     {
-      question: 'What file types are supported?',
-      answer: 'We support PDFs, Word documents, text files, and markdown. Our AI processes your documents to extract key concepts and create flashcards automatically.',
+      heading: "Who it's for",
+      faqs: [
+        {
+          question: 'Who is MentraFlow for?',
+          answer: 'MentraFlow is designed for environments where incorrect decisions have immediate regulatory, financial, or operational consequences. We focus initially on financial services compliance. That includes teams responsible for compliance, risk, audit, and operational decision-making—and extends into adjacent domains such as legal, healthcare, and professional certification.',
+        },
+      ],
     },
     {
-      question: 'Is my data secure?',
-      answer: 'Yes. All documents are encrypted at rest and in transit. We use industry-standard security practices and never share your data with third parties.',
+      heading: 'How it works',
+      faqs: [
+        {
+          question: 'What does "decision-ready" mean?',
+          answer: 'Decision-ready means employees are not just trained but able to make the right decisions when it matters. MentraFlow focuses on the moment of decision: we recreate realistic scenarios based on company workflows and past cases, require employees to decide and explain their reasoning, and measure how decisions align with policy and expected actions—shifting from passive knowledge to applied judgment.',
+        },
+        {
+          question: 'How does MentraFlow work?',
+          answer: 'MentraFlow connects to your compliance materials, certification content, and real-world decision data (e.g. past cases, audit findings), converting them into structured, scenario-based simulations. Employees respond to short decision prompts (what would you do, and why); the system evaluates alignment with policy. A dashboard gives a live view of decision readiness across individuals and teams.',
+        },
+        {
+          question: 'Why not just use an LLM?',
+          answer: 'LLMs make it easier to retrieve information, but they do not ensure correct decision-making. In compliance environments, the risk is not whether someone can find an answer—it is whether they can make the right call quickly and justify it. MentraFlow complements AI by ensuring employees can independently apply knowledge in real scenarios, with measurable and auditable evidence of decision quality.',
+        },
+      ],
     },
     {
-      question: 'Can I use MentraFlow with my existing tools?',
-      answer: 'Absolutely. MentraFlow is designed to layer on top of your existing workflow. You can continue using your current note-taking and learning tools while MentraFlow reinforces your knowledge.',
-    },
-    {
-      question: 'What\'s the difference between Free and Professional?',
-      answer: 'The Free tier includes basic features for up to 10 documents. Professional offers unlimited documents, advanced adaptive recall algorithms, priority support, and detailed analytics to track your retention progress.',
+      heading: 'Pricing & pilots',
+      faqs: [
+        {
+          question: 'What are typical outcomes?',
+          answer: 'Pilots focus on financial services workflows such as AML and transaction monitoring, where decisions are frequent and measurable. Key outcomes include improved decision accuracy, reduced inconsistent actions, increased confidence in handling real scenarios, and improved audit readiness—creating a direct link between training, decision behavior, and measurable business outcomes.',
+        },
+        {
+          question: 'How is MentraFlow priced?',
+          answer: 'We follow a phased go-to-market: Phase 1 (Pilot) at $75–$100 per learner for 8–12 weeks to demonstrate improvement in decision readiness; Phase 2 (Enterprise) with $50K–$250K+ annual contracts driven by risk reduction and audit readiness; Phase 3 (Platform) as an API layer integrating with LMS, AI tools, and internal systems.',
+        },
+      ],
     },
   ];
 
   return (
     <>
-      {/* FAQ Content */}
       <section className="bg-white py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-4">Frequently Asked Questions</h1>
-            <p className="text-lg text-center text-gray-600 mb-12">
-              Everything you need to know about MentraFlow
+            <h1 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-3">
+              Frequently Asked Questions
+            </h1>
+            <p className="text-lg text-center text-gray-600 mb-4">
+              Decision-readiness, who it's for, and how it works
             </p>
-            
-            <div className="space-y-6">
-              {faqs.map((faq, index) => (
-                <div key={index} className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{faq.question}</h3>
-                  <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+            <p className="text-center text-gray-700 mb-12 max-w-xl mx-auto">
+              For compliance and risk teams, leadership, and implementation partners.
+            </p>
+
+            <div className="space-y-12">
+              {groups.map((group, groupIndex) => (
+                <div key={groupIndex}>
+                  <h2
+                    className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b-2"
+                    style={{ borderColor: COLORS.brand.deepTeal }}
+                  >
+                    {group.heading}
+                  </h2>
+                  <div className="space-y-6">
+                    {group.faqs.map((faq, index) => (
+                      <div
+                        key={index}
+                        className="bg-gray-50 rounded-xl p-6 border border-gray-100"
+                      >
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                          {faq.question}
+                        </h3>
+                        <p className="text-gray-700 leading-relaxed">
+                          {faq.answer}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -52,4 +103,3 @@ const FAQ = () => {
 };
 
 export default FAQ;
-

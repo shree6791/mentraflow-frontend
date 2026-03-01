@@ -40,7 +40,7 @@ const QuizInterface = ({ flashcards, onComplete, onClose }) => {
 
   const currentCard = mcqFlashcards[currentIndex];
   const progress = ((currentIndex + 1) / mcqFlashcards.length) * 100;
-  const correctCount = answers.filter(a => a.correct).length;
+  const correctCount = answers.filter(a => a.isCorrect).length;
   const score = Math.round((correctCount / answers.length) * 100) || 0;
 
   const handleAnswerSelect = (answerIndex) => {

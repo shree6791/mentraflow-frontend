@@ -1,25 +1,23 @@
 // Theme Constants - Single Source of Truth for Colors, Spacing, etc.
 
 export const COLORS = {
-  // Brand Color Palette (from Brand Guidelines)
+  // Brand: confident, memorable — not dull, not loud (decision-readiness / regulated)
   brand: {
-    deepTeal: '#0E7C7B',        // Deep Teal
-    mindBlue: '#118AB2',        // Mind Blue
-    neuroYellow: '#FFD166',     // Neuro Yellow
-    neuralCoral: '#EF476F',     // Neural Coral
-    deepIndigo: '#073B4C',      // Deep Indigo
+    deepTeal: '#0E7C7B',        // Primary — trust, stability
+    mindBlue: '#118AB2',        // Links, secondary UI
+    deepIndigo: '#073B4C',      // Hero, depth
+    accentGold: '#B8935A',      // Muted gold — warmth, premium
+    accentCoral: '#B85441',     // Deeper coral — emphasis
+    neuroYellow: '#B8935A',     // Alias for accentGold
+    neuralCoral: '#B85441',     // Alias for accentCoral
   },
-  
-  // Primary Colors (aliases for backward compatibility)
   primary: {
-    teal: '#0E7C7B',      // Deep Teal
-    ocean: '#118AB2',     // Mind Blue
+    teal: '#0E7C7B',
+    ocean: '#118AB2',
   },
-  
-  // Secondary Colors (aliases for backward compatibility)
   secondary: {
-    yellow: '#FFD166',     // Neuro Yellow
-    coral: '#EF476F',      // Neural Coral
+    yellow: '#B8935A',
+    coral: '#B85441',
   },
   
   // Contrast Colors
@@ -31,8 +29,8 @@ export const COLORS = {
   // Functional Colors
   retention: {
     green: '#06D6A0',
-    yellow: '#FFD166',
-    red: '#EF476F',
+    yellow: '#B8935A',
+    red: '#B85441',
   },
   
   // Text Colors
@@ -52,12 +50,12 @@ export const COLORS = {
     divider: '#E5E7EB',
   },
   
-  // Gradients (using brand colors)
+  // Gradients — hero stays teal/indigo/blue for impact without bright
   gradients: {
-    primary: 'linear-gradient(135deg, #EF476F, #FFD166)', // Neural Coral to Neuro Yellow
-    teal: 'linear-gradient(135deg, #0E7C7B, #118AB2)',     // Deep Teal to Mind Blue
-    hero: 'linear-gradient(135deg, #073B4C 0%, #118AB2 40%, #FFD166 70%, #EF476F 100%)', // Deep Indigo → Mind Blue → Neuro Yellow → Neural Coral
-    brand: 'linear-gradient(135deg, #0E7C7B 0%, #118AB2 25%, #FFD166 50%, #EF476F 75%, #073B4C 100%)', // Full brand palette
+    primary: 'linear-gradient(135deg, #0E7C7B, #118AB2)',
+    teal: 'linear-gradient(135deg, #0E7C7B, #118AB2)',
+    hero: 'linear-gradient(135deg, #073B4C 0%, #0E7C7B 45%, #118AB2 100%)', // Indigo → Teal → Blue only
+    brand: 'linear-gradient(135deg, #073B4C 0%, #0E7C7B 50%, #118AB2 100%)',
   },
 };
 
@@ -100,9 +98,9 @@ export const getCSSVariables = () => {
     // Brand colors
     '--color-brand-deep-teal': COLORS.brand.deepTeal,
     '--color-brand-mind-blue': COLORS.brand.mindBlue,
-    '--color-brand-neuro-yellow': COLORS.brand.neuroYellow,
-    '--color-brand-neural-coral': COLORS.brand.neuralCoral,
     '--color-brand-deep-indigo': COLORS.brand.deepIndigo,
+    '--color-brand-accent-gold': COLORS.brand.accentGold,
+    '--color-brand-accent-coral': COLORS.brand.accentCoral,
     // Primary colors (aliases)
     '--color-primary-teal': COLORS.primary.teal,
     '--color-primary-ocean': COLORS.primary.ocean,

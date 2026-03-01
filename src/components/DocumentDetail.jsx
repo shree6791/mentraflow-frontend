@@ -107,10 +107,9 @@ const DocumentDetail = ({ document, open, onOpenChange }) => {
     }
   };
 
+  const isReady = document && ['processed', 'completed', 'ready'].includes(document.status);
   const getStatusIcon = () => {
-    if (document?.status === 'processed' || document?.status === 'completed') {
-      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-    }
+    if (isReady) return <CheckCircle2 className="h-5 w-5 text-green-500" />;
     if (document?.status === 'processing' || document?.status === 'ingesting') {
       return <Loader2 className="h-5 w-5 animate-spin text-primary-teal" />;
     }
@@ -118,12 +117,8 @@ const DocumentDetail = ({ document, open, onOpenChange }) => {
   };
 
   const getStatusText = () => {
-    if (document?.status === 'processed' || document?.status === 'completed') {
-      return 'Ready';
-    }
-    if (document?.status === 'processing' || document?.status === 'ingesting') {
-      return 'Processing';
-    }
+    if (isReady) return 'Ready';
+    if (document?.status === 'processing' || document?.status === 'ingesting') return 'Processing';
     return 'Pending';
   };
 
@@ -165,7 +160,17 @@ const DocumentDetail = ({ document, open, onOpenChange }) => {
                 <h3 className="font-semibold">Processing Status</h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if ((flashcardCount ?? 0) > 0) {
+                      navigate('/flashcards', { state: { documentId: document.id } });
+                      onOpenChange(false);
+                    }
+                  }}
+                  disabled={loadingStats || (flashcardCount ?? 0) === 0}
+                  className="bg-white rounded-lg p-3 border border-gray-200 text-left w-full hover:border-primary-teal hover:shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none cursor-pointer"
+                >
                   <div className="flex items-center gap-2 mb-1">
                     <BookOpen className="h-4 w-4 text-primary-teal" />
                     <span className="text-sm font-medium text-gray-700">Flashcards</span>
@@ -180,8 +185,19 @@ const DocumentDetail = ({ document, open, onOpenChange }) => {
                       {flashcardCount !== null ? flashcardCount : '-'}
                     </p>
                   )}
-                </div>
-                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                  <span className="text-xs text-primary-teal mt-1 block">Go to quiz →</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if ((kgConceptCount ?? 0) > 0) {
+                      navigate('/knowledge-graph', { state: { documentId: document.id } });
+                      onOpenChange(false);
+                    }
+                  }}
+                  disabled={loadingStats || (kgConceptCount ?? 0) === 0}
+                  className="bg-white rounded-lg p-3 border border-gray-200 text-left w-full hover:border-primary-teal hover:shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none cursor-pointer"
+                >
                   <div className="flex items-center gap-2 mb-1">
                     <Brain className="h-4 w-4 text-primary-teal" />
                     <span className="text-sm font-medium text-gray-700">KG Concepts</span>
@@ -196,7 +212,8 @@ const DocumentDetail = ({ document, open, onOpenChange }) => {
                       {kgConceptCount !== null ? kgConceptCount : '-'}
                     </p>
                   )}
-                </div>
+                  <span className="text-xs text-primary-teal mt-1 block">View in KG →</span>
+                </button>
               </div>
             </div>
 
@@ -241,7 +258,7 @@ const DocumentDetail = ({ document, open, onOpenChange }) => {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
-              {(document.status === 'processed' || document.status === 'completed') && (
+              {isReady && (
                 <>
                   <Button
                     variant="outline"

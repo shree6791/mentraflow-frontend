@@ -146,8 +146,9 @@ const Documents = () => {
           {/* Desktop Grid */}
           <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {documents.map((doc) => {
+              const isReady = ['processed', 'completed', 'ready'].includes(doc.status);
               const getStatusIcon = () => {
-                if (doc.status === 'processed' || doc.status === 'completed') {
+                if (isReady) {
                   return <CheckCircle2 className="h-4 w-4 text-green-500" />;
                 }
                 if (doc.status === 'processing' || doc.status === 'ingesting') {
@@ -157,12 +158,8 @@ const Documents = () => {
               };
 
               const getStatusText = () => {
-                if (doc.status === 'processed' || doc.status === 'completed') {
-                  return 'Ready';
-                }
-                if (doc.status === 'processing' || doc.status === 'ingesting') {
-                  return 'Processing';
-                }
+                if (isReady) return 'Ready';
+                if (doc.status === 'processing' || doc.status === 'ingesting') return 'Processing';
                 return 'Pending';
               };
 
@@ -189,7 +186,7 @@ const Documents = () => {
                         <span className="text-gray-500">
                           {new Date(doc.created_at).toLocaleDateString()}
                         </span>
-                        {(doc.status === 'processed' || doc.status === 'completed') && (
+                        {isReady && (
                           <div className="flex items-center gap-1 text-primary-teal">
                             <Sparkles className="h-3 w-3" />
                             <span className="text-xs">Ready</span>
@@ -208,18 +205,6 @@ const Documents = () => {
                         >
                           View
                         </Button>
-                        {(doc.status === 'processed' || doc.status === 'completed') && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedDocument(doc);
-                              setShowDocumentDetail(true);
-                            }}
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -236,8 +221,9 @@ const Documents = () => {
                 style={{ transform: `translateX(-${currentDocIndex * 100}%)` }}
               >
                 {documents.map((doc) => {
+                  const isReady = ['processed', 'completed', 'ready'].includes(doc.status);
                   const getStatusIcon = () => {
-                    if (doc.status === 'processed' || doc.status === 'completed') {
+                    if (isReady) {
                       return <CheckCircle2 className="h-4 w-4 text-green-500" />;
                     }
                     if (doc.status === 'processing' || doc.status === 'ingesting') {
@@ -247,12 +233,8 @@ const Documents = () => {
                   };
 
                   const getStatusText = () => {
-                    if (doc.status === 'processed' || doc.status === 'completed') {
-                      return 'Ready';
-                    }
-                    if (doc.status === 'processing' || doc.status === 'ingesting') {
-                      return 'Processing';
-                    }
+                    if (isReady) return 'Ready';
+                    if (doc.status === 'processing' || doc.status === 'ingesting') return 'Processing';
                     return 'Pending';
                   };
 
@@ -278,7 +260,7 @@ const Documents = () => {
                               <span className="text-gray-500">
                                 {new Date(doc.created_at).toLocaleDateString()}
                               </span>
-                              {(doc.status === 'processed' || doc.status === 'completed') && (
+                              {isReady && (
                                 <div className="flex items-center gap-1 text-primary-teal">
                                   <Sparkles className="h-3 w-3" />
                                   <span className="text-xs">Ready</span>

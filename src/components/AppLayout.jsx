@@ -13,16 +13,19 @@ import {
   Menu,
   X,
   FolderPlus,
-  ChevronDown
+  ChevronDown,
+  Trash2
 } from 'lucide-react';
 import { Button } from './ui/button';
+import MentraFlowLogo from './MentraFlowLogo';
 import WorkspaceCreateModal from './WorkspaceCreateModal';
+import { toast } from 'sonner';
 import { COLORS } from '../constants/theme';
 
 const AppLayout = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { currentWorkspace, workspaces, selectWorkspace, loading } = useWorkspace();
+  const { currentWorkspace, workspaces, selectWorkspace, deleteWorkspace, loading } = useWorkspace();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
@@ -40,11 +43,27 @@ const AppLayout = ({ children }) => {
     await logout();
   };
 
+  const handleDeleteWorkspace = async (e, workspaceId, workspaceName) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete workspace "${workspaceName}"? This cannot be undone.`)) return;
+    try {
+      await deleteWorkspace(workspaceId);
+      setWorkspaceDropdownOpen(false);
+      toast.success('Workspace deleted');
+    } catch (err) {
+      console.error('Delete workspace failed:', err);
+      toast.error('Failed to delete workspace');
+    }
+  };
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* Mobile sidebar toggle */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-primary-teal">MentraFlow</h1>
+        <div className="flex items-center gap-2">
+          <MentraFlowLogo className="h-9 w-9" color={COLORS.brand.deepTeal} />
+          <h1 className="text-xl font-bold text-primary-teal">MentraFlow</h1>
+        </div>
         <Button
           variant="ghost"
           size="icon"
@@ -70,9 +89,12 @@ const AppLayout = ({ children }) => {
         >
           <div className="flex flex-col h-full overflow-hidden">
             {/* Logo */}
-            <div className="px-6 py-4 border-b border-gray-200 hidden lg:block">
-              <h1 className="text-2xl font-bold text-primary-teal">MentraFlow</h1>
-              <p className="text-sm text-gray-500">Learn Smarter</p>
+            <div className="px-6 py-4 border-b border-gray-200 hidden lg:flex lg:items-center lg:gap-2">
+              <MentraFlowLogo className="h-10 w-10 shrink-0" color={COLORS.brand.deepTeal} />
+              <div>
+                <h1 className="text-2xl font-bold text-primary-teal">MentraFlow</h1>
+                <p className="text-sm text-gray-500">Learn Smarter</p>
+              </div>
             </div>
 
             {/* Workspace Selector */}
@@ -112,18 +134,32 @@ const AppLayout = ({ children }) => {
                         />
                         <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
                           {workspaces.map((ws) => (
-                            <button
+                            <div
                               key={ws.id}
-                              onClick={() => {
-                                selectWorkspace(ws);
-                                setWorkspaceDropdownOpen(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                                currentWorkspace?.id === ws.id ? 'bg-primary-teal/10 text-primary-teal font-medium' : 'text-gray-700'
+                              className={`flex items-center justify-between group ${
+                                currentWorkspace?.id === ws.id ? 'bg-primary-teal/10 text-primary-teal' : 'text-gray-700'
                               }`}
                             >
-                              {ws.name}
-                            </button>
+                              <button
+                                onClick={() => {
+                                  selectWorkspace(ws);
+                                  setWorkspaceDropdownOpen(false);
+                                }}
+                                className={`flex-1 text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors font-medium truncate ${
+                                  currentWorkspace?.id === ws.id ? 'text-primary-teal' : ''
+                                }`}
+                              >
+                                {ws.name}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteWorkspace(e, ws.id, ws.name)}
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors shrink-0"
+                                title="Delete workspace"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           ))}
                           <div className="border-t border-gray-200">
                             <button
@@ -153,10 +189,25 @@ const AppLayout = ({ children }) => {
               }}
             />
 
-            {/* Navigation */}
+            {/* Navigation - Dashboard always enabled; others require a workspace */}
             <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
+                const isDashboard = item.href === '/dashboard';
+                const noWorkspace = !currentWorkspace || workspaces.length === 0;
+                const disabled = noWorkspace && !isDashboard;
+                if (disabled) {
+                  return (
+                    <span
+                      key={item.name}
+                      className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-400 cursor-not-allowed"
+                      aria-disabled="true"
+                    >
+                      <item.icon className="mr-3 h-5 w-5" />
+                      {item.name}
+                    </span>
+                  );
+                }
                 return (
                   <Link
                     key={item.name}

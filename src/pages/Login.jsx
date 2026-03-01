@@ -161,26 +161,26 @@ const Login = () => {
         }}
       >
         <div className="w-full max-w-5xl mx-auto grid md:grid-cols-2 gap-8 items-center">
-          {/* Left Side - Encouraging Text */}
+          {/* Left Side - Product-aligned copy */}
           <div className="hidden md:block text-white">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-              Start Retaining Knowledge Today
+              When the wrong decision has real consequences
             </h2>
             <p className="text-xl mb-6 text-white/90">
-              Make learning compound, not decay. Join professionals who are transforming how they retain, recall, and reuse knowledge.
+              From training completion to demonstrated capability. Sign in to run decision simulations, measure readiness, and build auditable evidence.
             </p>
             <div className="space-y-4">
               <div className="flex items-start">
-                <div className="w-2 h-2 rounded-full mt-2 mr-3" style={{ backgroundColor: COLORS.brand.neuroYellow }}></div>
-                <p className="text-white/90">Adaptive reinforcement guided by your forgetting curve</p>
+                <div className="w-2 h-2 rounded-full mt-2 mr-3 shrink-0" style={{ backgroundColor: COLORS.brand.neuroYellow }} />
+                <p className="text-white/90">Real-world decision scenarios from your compliance and workflows</p>
               </div>
               <div className="flex items-start">
-                <div className="w-2 h-2 rounded-full mt-2 mr-3" style={{ backgroundColor: COLORS.brand.neuroYellow }}></div>
-                <p className="text-white/90">Transform notes and documents into lasting knowledge</p>
+                <div className="w-2 h-2 rounded-full mt-2 mr-3 shrink-0" style={{ backgroundColor: COLORS.brand.neuroYellow }} />
+                <p className="text-white/90">Measure how decisions align with policy—not just completion</p>
               </div>
               <div className="flex items-start">
-                <div className="w-2 h-2 rounded-full mt-2 mr-3" style={{ backgroundColor: COLORS.brand.neuroYellow }}></div>
-                <p className="text-white/90">Built for professionals who can't afford to forget</p>
+                <div className="w-2 h-2 rounded-full mt-2 mr-3 shrink-0" style={{ backgroundColor: COLORS.brand.neuroYellow }} />
+                <p className="text-white/90">Built for compliance, risk, and audit teams in regulated environments</p>
               </div>
             </div>
           </div>

@@ -1,16 +1,79 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { COLORS } from '../constants/theme';
-import { Brain, ChevronDown, Clock, Instagram, Facebook, MapPin, Menu, X } from 'lucide-react';
+import { ChevronDown, Clock, Instagram, Facebook, MapPin, Menu, X, ArrowRight } from 'lucide-react';
+import MentraFlowLogo from './MentraFlowLogo';
 import { Button } from './ui/button';
+
+const CTA_BY_PATH = {
+  '/': {
+    heading: 'Ready to move from training to capability?',
+    subtitle: 'Talk to us about a pilot for compliance, risk, and audit teams.',
+    primaryLabel: 'Talk to us',
+    primaryTo: '/contact',
+    secondaryLabel: 'Sign in',
+    secondaryTo: '/login',
+  },
+  '/about': {
+    heading: 'Want to see how it works?',
+    subtitle: 'Get in touch for a demo or pilot for your team.',
+    primaryLabel: 'Talk to us',
+    primaryTo: '/contact',
+    secondaryLabel: 'Sign in',
+    secondaryTo: '/login',
+  },
+  '/features': {
+    heading: 'Ready to see it in action?',
+    subtitle: 'Talk to us about a pilot for your compliance or audit team.',
+    primaryLabel: 'Talk to us',
+    primaryTo: '/contact',
+    secondaryLabel: 'Sign in',
+    secondaryTo: '/login',
+  },
+  '/pricing': {
+    heading: 'Questions about pricing?',
+    subtitle: 'Pilots, enterprise, or custom—we can help.',
+    primaryLabel: 'Talk to us',
+    primaryTo: '/contact',
+    secondaryLabel: 'Sign in',
+    secondaryTo: '/login',
+  },
+  '/faq': {
+    heading: 'Ready to talk about a pilot?',
+    subtitle: 'Contact us to get started or sign in to your account.',
+    primaryLabel: 'Talk to us',
+    primaryTo: '/contact',
+    secondaryLabel: 'Sign in',
+    secondaryTo: '/login',
+  },
+  '/contact': {
+    heading: "We're here to help.",
+    subtitle: 'Use the form above or sign in to your account.',
+    primaryLabel: 'Sign in',
+    primaryTo: '/login',
+    secondaryLabel: 'Talk to us',
+    secondaryTo: '/contact',
+  },
+  '/login': {
+    heading: 'New to MentraFlow?',
+    subtitle: 'Talk to us about a pilot for your team.',
+    primaryLabel: 'Talk to us',
+    primaryTo: '/contact',
+    secondaryLabel: 'Sign in',
+    secondaryTo: '/login',
+  },
+};
 
 const PublicLayout = ({ children }) => {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const timeoutRef = useRef(null);
+
+  const cta = CTA_BY_PATH[location.pathname] || CTA_BY_PATH['/'];
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -36,16 +99,13 @@ const PublicLayout = ({ children }) => {
         <nav className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-2">
-              <Brain className="h-8 w-8" style={{ color: COLORS.brand.deepTeal }} />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">MentraFlow</h1>
-                <p className="text-xs text-gray-600 hidden sm:block">Cognitive Infrastructure</p>
-              </div>
+              <MentraFlowLogo className="h-[60px] w-[60px]" color={COLORS.brand.deepTeal} />
+              <h1 className="text-2xl font-bold text-gray-900">MentraFlow</h1>
             </Link>
             
             {/* Desktop Navigation Links - Right Aligned */}
             <div className="hidden md:flex items-center space-x-8 ml-auto mr-8">
-              <Link to="/about" className="text-gray-700 hover:text-brand-deepTeal transition-colors font-medium">
+              <Link to="/about" className="text-gray-700 hover:text-brand-deepTeal transition-colors font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-deepTeal focus-visible:ring-offset-2 rounded px-1">
                 About
               </Link>
               
@@ -66,7 +126,7 @@ const PublicLayout = ({ children }) => {
                 }}
               >
                 <button 
-                  className="flex items-center text-gray-700 hover:text-brand-deepTeal transition-colors font-medium"
+                  className="flex items-center text-gray-700 hover:text-brand-deepTeal transition-colors font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-deepTeal focus-visible:ring-offset-2 rounded px-1"
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
                   Services
@@ -101,7 +161,7 @@ const PublicLayout = ({ children }) => {
                 )}
               </div>
               
-              <Link to="/contact" className="text-gray-700 hover:text-brand-deepTeal transition-colors font-medium">
+              <Link to="/contact" className="text-gray-700 hover:text-brand-deepTeal transition-colors font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-deepTeal focus-visible:ring-offset-2 rounded px-1">
                 Contact
               </Link>
             </div>
@@ -123,7 +183,7 @@ const PublicLayout = ({ children }) => {
                 </Link>
               ) : (
                 <Link to="/login">
-                  <Button style={{ backgroundColor: COLORS.brand.deepTeal, color: 'white' }}>
+                  <Button className="text-white hover:opacity-90" style={{ backgroundColor: COLORS.brand.deepTeal }}>
                     Sign In
                   </Button>
                 </Link>
@@ -186,7 +246,7 @@ const PublicLayout = ({ children }) => {
                   ) : (
                     <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
                       <Button 
-                        className="w-full text-white font-semibold"
+                        className="w-full text-white font-semibold hover:opacity-90"
                         style={{ backgroundColor: COLORS.brand.deepTeal }}
                       >
                         Sign In
@@ -205,18 +265,49 @@ const PublicLayout = ({ children }) => {
         {children}
       </main>
 
+      {/* Shared CTA — copy varies by page; skip on contact and login */}
+      {!isAuthenticated && location.pathname !== '/contact' && location.pathname !== '/login' && (
+        <section
+          className="py-14 bg-white border-t-2"
+          style={{ borderTopColor: COLORS.brand.deepTeal }}
+        >
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{cta.heading}</h2>
+            <p className="text-gray-600 mb-6 max-w-xl mx-auto text-lg">
+              {cta.subtitle}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link to={cta.primaryTo}>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto font-semibold px-6 py-5 text-white hover:opacity-90"
+                  style={{ backgroundColor: COLORS.brand.deepTeal }}
+                >
+                  {cta.primaryLabel}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to={cta.secondaryTo}>
+                <Button variant="outline" size="lg" className="w-full sm:w-auto font-semibold px-6 py-5">
+                  {cta.secondaryLabel}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Footer */}
-      <footer className="py-8 border-t-4" style={{ backgroundColor: COLORS.brand.deepIndigo, borderTopColor: COLORS.brand.deepTeal }}>
+      <footer className="border-t-4 py-8" style={{ backgroundColor: COLORS.brand.deepIndigo, borderTopColor: COLORS.brand.deepTeal }}>
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8 mb-6">
             <div>
               <div className="flex items-center space-x-2 mb-2">
-                <Brain className="h-5 w-5" style={{ color: COLORS.brand.neuroYellow }} />
+                <MentraFlowLogo className="h-[60px] w-[60px]" color={COLORS.brand.neuroYellow} />
                 <h3 className="text-lg font-bold text-white">MentraFlow</h3>
               </div>
               <p className="text-gray-400 text-xs leading-relaxed mb-4">
-                Make learning compound, not decay.<br />
-                Retain, recall, and reuse what you learn.
+                From training to demonstrated capability.
               </p>
               
               <div className="flex items-center justify-start space-x-3">
@@ -271,7 +362,7 @@ const PublicLayout = ({ children }) => {
           
           <div className="border-t border-gray-700 pt-4 text-center">
             <p className="text-gray-400 text-xs">
-              &copy; 2025 MentraFlow. All rights reserved. | Cognitive Infrastructure Platform
+              &copy; 2025 MentraFlow. All rights reserved. | Decision-Readiness Platform
             </p>
           </div>
         </div>

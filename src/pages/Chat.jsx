@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { chatService } from '../services/api';
+import { chatService, workspaceService } from '../services/api';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -8,11 +8,21 @@ import { MessageSquare, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { COLORS } from '../constants/theme';
 
+const normalizeId = (id) => (id != null ? String(id) : null);
+
+const mapMessage = (m) => ({
+  role: m.role === 'assistant' ? 'assistant' : 'user',
+  content: m.content ?? m.text ?? '',
+  timestamp: m.created_at ? new Date(m.created_at) : new Date(),
+  metadata: { ...(m.metadata || {}), citations: m.citations ?? m.metadata?.citations },
+});
+
 const Chat = () => {
   const { currentWorkspace, user } = useWorkspace();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -22,6 +32,26 @@ const Chat = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load conversation history from workspace conversations endpoint (returns messages directly)
+  useEffect(() => {
+    if (!currentWorkspace?.id) {
+      setMessages([]);
+      return;
+    }
+    setLoadingHistory(true);
+    workspaceService
+      .getConversations(normalizeId(currentWorkspace.id))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.conversations ?? data?.messages ?? [];
+        setMessages(list.map(mapMessage));
+      })
+      .catch((err) => {
+        console.error('Load conversation failed:', err);
+        setMessages([]);
+      })
+      .finally(() => setLoadingHistory(false));
+  }, [currentWorkspace?.id]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -38,21 +68,14 @@ const Chat = () => {
     setLoading(true);
 
     try {
-      const response = await chatService.sendMessage({
+      await chatService.sendMessage({
         workspace_id: currentWorkspace.id,
-        user_id: user.user_id,
-        message: input,
+        message: input.trim(),
         top_k: 8,
       });
-
-      const assistantMessage = {
-        role: 'assistant',
-        content: response.content || response.answer || 'No response',
-        timestamp: new Date(),
-        metadata: response.metadata,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      const data = await workspaceService.getConversations(normalizeId(currentWorkspace.id));
+      const list = Array.isArray(data) ? data : data?.conversations ?? data?.messages ?? [];
+      setMessages(list.map(mapMessage));
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
@@ -93,7 +116,12 @@ const Chat = () => {
 
       <Card className="flex-1 flex flex-col mb-4 min-h-0">
         <CardContent className="flex-1 overflow-y-auto p-6 min-h-0">
-          {messages.length === 0 ? (
+          {loadingHistory ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Loader2 className="h-10 w-10 animate-spin text-gray-400 mb-4" style={{ color: COLORS.brand.deepTeal }} />
+              <p className="text-gray-600">Loading conversation...</p>
+            </div>
+          ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquare className="h-16 w-16 text-gray-400 mb-4" />
               <h3 className="text-xl font-semibold mb-2">Start a conversation</h3>
@@ -103,19 +131,21 @@ const Chat = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {messages.map((message, index) => (
+              {[...messages]
+                .sort((a, b) => (a.timestamp?.getTime?.() ?? 0) - (b.timestamp?.getTime?.() ?? 0))
+                .map((message, index) => (
                 <div
                   key={index}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`max-w-[80%] rounded-lg p-4 ${
-                      message.role === 'user'
-                        ? 'bg-primary-teal text-white'
-                        : 'bg-gray-100 text-gray-900'
+                      message.role === 'user' ? 'bg-primary-teal text-white' : 'bg-gray-100 text-gray-900'
                     }`}
                   >
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <div className="max-h-[50vh] overflow-y-auto overflow-x-hidden">
+                      <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                    </div>
                     {message.metadata?.citations && message.metadata.citations.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-white/20">
                         <p className="text-xs opacity-80">

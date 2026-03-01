@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { documentService, flashcardService, kgService } from '../services/api';
+import { workspaceService } from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { FileText, BookOpen, Brain, MessageSquare, Plus, ChevronLeft, ChevronRight, FolderPlus, Sparkles, Target, Award, Zap } from 'lucide-react';
@@ -20,7 +20,7 @@ const Dashboard = () => {
     totalFlashcards: 0,
     dueFlashcards: 0,
     processedDocuments: 0,
-    averageMastery: 0,
+    averageMastery: null, // number | null: from workspace insights API; null = no data / "—"
     recentActivity: [],
   });
   const [loading, setLoading] = useState(true);
@@ -31,82 +31,43 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (currentWorkspace) {
-      loadStats();
-      loadInsights();
+      loadDashboard();
     }
   }, [currentWorkspace]);
 
-  const loadStats = async () => {
+  const loadDashboard = async () => {
     if (!currentWorkspace) return;
 
     setLoading(true);
-    try {
-      const [documents, flashcards, concepts] = await Promise.all([
-        documentService.list(currentWorkspace.id).catch(() => []),
-        flashcardService.list(currentWorkspace.id, { limit: 1 }).catch(() => []),
-        kgService.listConcepts(currentWorkspace.id, { limit: 1 }).catch(() => []),
-      ]);
-
-      setStats({
-        documents: documents.length || 0,
-        flashcards: flashcards.length || 0,
-        concepts: concepts.length || 0,
-      });
-    } catch (error) {
-      console.error('Error loading stats:', error);
-      toast.error('Failed to load dashboard stats');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadInsights = async () => {
-    if (!currentWorkspace || !user) return;
-
     setLoadingInsights(true);
     try {
-      const [allFlashcards, dueFlashcards, documents, concepts] = await Promise.all([
-        flashcardService.list(currentWorkspace.id, { limit: 100 }).catch(() => []),
-        flashcardService.getDue(currentWorkspace.id, user.user_id, 100).catch(() => []),
-        documentService.list(currentWorkspace.id).catch(() => []),
-        kgService.listConcepts(currentWorkspace.id, { limit: 100 }).catch(() => []),
-      ]);
+      const insightsRes = await workspaceService.getInsights(currentWorkspace.id).catch(() => null);
 
-      // Calculate insights
-      const processedDocs = documents.filter(doc => 
-        doc.status === 'processed' || doc.status === 'completed'
-      ).length;
+      if (!insightsRes) {
+        setLoading(false);
+        setLoadingInsights(false);
+        return;
+      }
 
-      // Calculate average mastery (based on flashcard ease/interval if available)
-      let totalMastery = 0;
-      let masteryCount = 0;
-      allFlashcards.forEach(card => {
-        if (card.ease_factor) {
-          // Convert ease factor to mastery percentage (0-100)
-          const mastery = Math.min(100, (card.ease_factor / 2.5) * 100);
-          totalMastery += mastery;
-          masteryCount++;
-        }
+      // Overview (top) and Learning Insights: all from workspace insights API
+      setStats({
+        documents: insightsRes.documents_count ?? 0,
+        flashcards: insightsRes.total_flashcards ?? 0,
+        concepts: insightsRes.kg_concepts_count ?? 0,
       });
-      const averageMastery = masteryCount > 0 ? Math.round(totalMastery / masteryCount) : 0;
-
-      // Get recent activity (last 7 days of document uploads)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const recentDocs = documents.filter(doc => 
-        new Date(doc.created_at) >= sevenDaysAgo
-      );
 
       setInsights({
-        totalFlashcards: allFlashcards.length,
-        dueFlashcards: dueFlashcards.length || 0,
-        processedDocuments: processedDocs,
-        averageMastery,
-        recentActivity: recentDocs.length,
+        totalFlashcards: insightsRes.total_flashcards ?? 0,
+        dueFlashcards: insightsRes.cards_due ?? 0,
+        processedDocuments: insightsRes.documents_count ?? 0,
+        averageMastery: insightsRes.average_mastery ?? null,
+        recentActivity: insightsRes.recent_activity ?? 0,
       });
     } catch (error) {
-      console.error('Error loading insights:', error);
+      console.error('Error loading dashboard:', error);
+      toast.error('Failed to load dashboard');
     } finally {
+      setLoading(false);
       setLoadingInsights(false);
     }
   };
@@ -549,7 +510,7 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Average Mastery */}
+            {/* Average Mastery (from workspace insights API; null = no data / "—") */}
             <Card className="border-2 border-teal-200 bg-gradient-to-br from-teal-50 to-cyan-50 hover:shadow-lg transition-all">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -560,13 +521,13 @@ const Dashboard = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-1">Average Mastery</p>
                   <p className="text-3xl font-bold text-teal-600 mb-2">
-                    {loadingInsights ? '...' : `${insights.averageMastery}%`}
+                    {loadingInsights ? '...' : insights.averageMastery != null ? `${insights.averageMastery}%` : '—'}
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                     <div
                       className="h-2.5 rounded-full transition-all shadow-sm"
                       style={{
-                        width: `${insights.averageMastery}%`,
+                        width: `${insights.averageMastery != null ? insights.averageMastery : 0}%`,
                         background: `linear-gradient(90deg, ${COLORS.brand.deepTeal}, ${COLORS.primary.ocean})`,
                       }}
                     />

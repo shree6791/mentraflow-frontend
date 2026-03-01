@@ -114,9 +114,16 @@ export const WorkspaceProvider = ({ children }) => {
     setLoading(true);
     try {
       await workspaceService.delete(workspaceId);
-      setWorkspaces((prev) => prev.filter((w) => w.id !== workspaceId));
+      const nextWorkspaces = workspaces.filter((w) => w.id !== workspaceId);
+      setWorkspaces(nextWorkspaces);
       if (currentWorkspace?.id === workspaceId) {
-        setCurrentWorkspace(workspaces.find((w) => w.id !== workspaceId) || null);
+        const nextCurrent = nextWorkspaces[0] || null;
+        setCurrentWorkspace(nextCurrent);
+        if (nextCurrent) {
+          localStorage.setItem('current_workspace_id', nextCurrent.id);
+        } else {
+          localStorage.removeItem('current_workspace_id');
+        }
       }
     } catch (error) {
       console.error('Error deleting workspace:', error);

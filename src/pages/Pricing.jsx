@@ -191,6 +191,7 @@ const Pricing = () => {
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       </section>

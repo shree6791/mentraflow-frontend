@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { flashcardService, documentService } from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -13,6 +14,8 @@ const ITEMS_PER_PAGE = 12;
 
 const Flashcards = () => {
   const { currentWorkspace, user } = useWorkspace();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [flashcards, setFlashcards] = useState([]);
   const [dueFlashcards, setDueFlashcards] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -26,10 +29,22 @@ const Flashcards = () => {
   useEffect(() => {
     if (currentWorkspace && user) {
       loadDocuments();
-      loadFlashcards();
       loadDueFlashcards();
+      // When opened with documentId (from document detail), quiz effect will load flashcards for that doc
+      if (!location.state?.documentId) {
+        loadFlashcards();
+      }
     }
   }, [currentWorkspace, user]);
+
+  // When opened from document detail with documentId, start quiz for that document
+  useEffect(() => {
+    const documentId = location.state?.documentId;
+    if (currentWorkspace && user && documentId && mode === 'selection') {
+      navigate(location.pathname, { replace: true, state: {} }); // clear state so refresh doesn't re-trigger
+      handleStartQuiz(documentId);
+    }
+  }, [currentWorkspace, user, location.state?.documentId]);
 
   const loadDocuments = async () => {
     if (!currentWorkspace) return;
@@ -118,19 +133,27 @@ const Flashcards = () => {
   const handleQuizComplete = async (results) => {
     try {
       for (const answer of results.answers) {
-        await flashcardService.review(answer.flashcardId, {
-          user_id: user.user_id,
-          workspace_id: currentWorkspace.id,
-          grade: answer.isCorrect ? 3 : 0,
-          response_time_ms: answer.responseTime,
-        });
+        // Use force=true: quiz uses all cards from list(), not only "due" ones; backend would otherwise reject with "Card not due yet"
+        await flashcardService.review(
+          answer.flashcardId,
+          {
+            user_id: user.user_id,
+            workspace_id: currentWorkspace.id,
+            grade: answer.isCorrect ? 3 : 0,
+            response_time_ms: answer.responseTime,
+          },
+          true
+        );
       }
       toast.success(`Quiz completed! Score: ${results.score}%`);
     } catch (error) {
       console.error('Error recording quiz results:', error);
       toast.error('Quiz completed, but failed to save some results');
     }
-    
+    // Keep user on results screen; they leave via "Done" or "Retake Quiz"
+  };
+
+  const handleQuizClose = () => {
     setMode('selection');
     setSelectedDocument(null);
     loadFlashcards();
@@ -166,10 +189,7 @@ const Flashcards = () => {
         <div className="mb-6">
           <Button
             variant="outline"
-            onClick={() => {
-              setMode('selection');
-              setSelectedDocument(null);
-            }}
+            onClick={handleQuizClose}
             className="mb-4"
           >
             ← Back
@@ -184,10 +204,7 @@ const Flashcards = () => {
         <QuizInterface
           flashcards={mcqFlashcards}
           onComplete={handleQuizComplete}
-          onClose={() => {
-            setMode('selection');
-            setSelectedDocument(null);
-          }}
+          onClose={handleQuizClose}
         />
       </div>
     );

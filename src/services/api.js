@@ -207,6 +207,16 @@ export const workspaceService = {
     return response.data;
   },
 
+  getInsights: async (workspaceId) => {
+    const response = await apiClient.get(`/workspaces/${workspaceId}/insights`);
+    return response.data;
+  },
+
+  getConversations: async (workspaceId) => {
+    const response = await apiClient.get(`/workspaces/${workspaceId}/conversations`);
+    return response.data;
+  },
+
   update: async (workspaceId, data) => {
     const response = await apiClient.patch(`/workspaces/${workspaceId}`, data);
     return response.data;
@@ -348,6 +358,16 @@ export const kgService = {
 export const chatService = {
   sendMessage: async (data) => {
     const response = await apiClient.post('/chat', data);
+    return response.data;
+  },
+};
+
+// ============================================
+// CONVERSATIONS SERVICE (chat history)
+// ============================================
+export const conversationService = {
+  getMessages: async (conversationId) => {
+    const response = await apiClient.get(`/conversations/${conversationId}/messages`);
     return response.data;
   },
 };

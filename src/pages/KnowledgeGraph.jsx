@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { kgService } from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -10,6 +11,8 @@ import { COLORS } from '../constants/theme';
 
 const KnowledgeGraph = () => {
   const { currentWorkspace } = useWorkspace();
+  const location = useLocation();
+  const documentId = location.state?.documentId;
   const [concepts, setConcepts] = useState([]);
   const [edges, setEdges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,17 +22,19 @@ const KnowledgeGraph = () => {
 
   useEffect(() => {
     if (currentWorkspace) {
-      loadKnowledgeGraph();
+      loadKnowledgeGraph(documentId || undefined);
     }
-  }, [currentWorkspace]);
+  }, [currentWorkspace, documentId]);
 
-  const loadKnowledgeGraph = async () => {
+  const loadKnowledgeGraph = async (filterDocumentId) => {
     if (!currentWorkspace) return;
 
     setLoading(true);
     try {
+      const conceptFilters = { limit: 100 };
+      if (filterDocumentId) conceptFilters.document_id = filterDocumentId;
       const [conceptsData, edgesData] = await Promise.all([
-        kgService.listConcepts(currentWorkspace.id, { limit: 100 }),
+        kgService.listConcepts(currentWorkspace.id, conceptFilters),
         kgService.listEdges(currentWorkspace.id, { limit: 100 }),
       ]);
       setConcepts(conceptsData);
@@ -83,7 +88,9 @@ const KnowledgeGraph = () => {
               Knowledge Graph
             </h1>
             <p className="text-gray-600 text-lg">
-              Visualize concepts and relationships from your documents
+              {documentId
+                ? 'Concepts and relationships from this document'
+                : 'Visualize concepts and relationships from your documents'}
             </p>
           </div>
           {concepts.length > 0 && (

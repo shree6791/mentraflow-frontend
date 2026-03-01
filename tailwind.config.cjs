@@ -13,13 +13,15 @@ module.exports = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        // Brand colors (from Brand Guidelines)
+        // Brand (refined: lasting impact, not dull, not loud)
         brand: {
-          deepTeal: "#0E7C7B",      // Deep Teal
-          mindBlue: "#118AB2",     // Mind Blue
-          neuroYellow: "#FFD166",   // Neuro Yellow
-          neuralCoral: "#EF476F",   // Neural Coral
-          deepIndigo: "#073B4C",    // Deep Indigo
+          deepTeal: "#0E7C7B",
+          mindBlue: "#118AB2",
+          deepIndigo: "#073B4C",
+          accentGold: "#B8935A",
+          accentCoral: "#B85441",
+          neuroYellow: "#B8935A",
+          neuralCoral: "#B85441",
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -30,13 +32,13 @@ module.exports = {
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
-          yellow: "#FFD166",        // Neuro Yellow (alias)
-          coral: "#EF476F",         // Neural Coral (alias)
+          yellow: "#B8935A",
+          coral: "#B85441",
         },
         retention: {
           green: "#06D6A0",
-          yellow: "#FFD166",
-          red: "#EF476F",
+          yellow: "#B8935A",
+          red: "#B85441",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
